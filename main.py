@@ -1,3 +1,6 @@
+import logging
+from client.custom_formatter import CustomFormatter
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -5,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import random
 import time
-from typing import List
+from typing import List, Optional
 import uuid
 import grpc
 import grpc.aio
@@ -18,6 +21,7 @@ from client.client import Client
 
 class MatchingSystemSimulator:
     def __init__(self, num_engines: int = 3, num_clients: int = 3, base_port: int = 50051):
+        self.name = "Simulator"
         self.num_engines = num_engines
         self.num_clients = num_clients
         self.base_port = base_port
@@ -27,7 +31,12 @@ class MatchingSystemSimulator:
         self.clients = []
         
     async def setup(self):
-        """Set up matching engines, synchronizers, and clients"""
+        """Set up matching engines, synchronizers, clients, and logging"""
+
+        # setup logging
+
+        self._setup_logging()
+
         # Create engines
         for i in range(self.num_engines):
             engine = MatchEngine(f"engine_{i}")
@@ -55,9 +64,9 @@ class MatchingSystemSimulator:
                     f"127.0.0.1:{self.base_port + i}"
                 )
                 self.servers.append(server)
-                print(f"Started server {i} on port {self.base_port + i}")
+                self.logger.info(f"Started server {i} on port {self.base_port + i}")
             except Exception as e:
-                print(f"Failed to start server {i}: {e}")
+                self.logger.info(f"Failed to start server {i}: {e}")
                 raise
             
         # Wait for servers to start
@@ -68,6 +77,7 @@ class MatchingSystemSimulator:
             client = Client(f"Client_{i}")
             self.clients.append(client)
             self._assign_client(client)
+
         
     async def cleanup(self):
         """Cleanup resources"""
@@ -84,12 +94,12 @@ class MatchingSystemSimulator:
         for client in self.clients:
             client.disconnect()
         
-    async def run_simulation(self, num_orders: int = 1000, symbols: List[str] = None):
+    async def run_simulation(self, num_orders: int = 1000, symbols: Optional[List[str]] = None):
         """Run trading simulation"""
         if symbols is None:
             symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
             
-        print("Starting simulation...")
+        self.logger.info("Starting simulation...")
         start_time = time.time()
         
         try:
@@ -122,37 +132,37 @@ class MatchingSystemSimulator:
                         await synchronizer.publish_update(order.symbol, bids, asks)
                 
                     latency = time.time() - submit_time
-                    print(f"Order {i+1}: {order.order_id} executed in {latency*1000:.2f}ms with {len(fills)} fills")
+                    self.logger.info(f"Order {i+1}: {order.order_id} executed in {latency*1000:.2f}ms with {len(fills)} fills")
                 
                 # Small delay between orders
                 await asyncio.sleep(0.1)
                 
             total_time = time.time() - start_time
-            print(f"\nSimulation completed:")
-            print(f"Processed {num_orders} orders in {total_time:.2f} seconds")
-            print(f"Average latency: {(total_time/num_orders)*1000:.2f}ms per order")
+            self.logger.info(f"\nSimulation completed:")
+            self.logger.info(f"Processed {num_orders} orders in {total_time:.2f} seconds")
+            self.logger.info(f"Average latency: {(total_time/num_orders)*1000:.2f}ms per order")
             
             # Print final order book state
             await self._print_order_books(symbols)
             
         except Exception as e:
-            print(f"Simulation error: {e}")
+            self.logger.info(f"Simulation error: {e}")
             raise
             
     async def _print_order_books(self, symbols: List[str]):
         """Print final state of all order books"""
         for symbol in symbols:
-            print(f"\nOrder book for {symbol}:")
+            self.logger.info(f"\nOrder book for {symbol}:")
             for engine in self.engines:
                 if symbol in engine.orderbooks:
                     book = engine.orderbooks[symbol]
-                    print(f"\nEngine {engine.engine_id}:")
-                    print("Bids:")
+                    self.logger.info(f"\nEngine {engine.engine_id}:")
+                    self.logger.info("Bids:")
                     for price in sorted(book.bids.keys(), reverse=True)[:5]:
-                        print(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
-                    print("Asks:")
+                        self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
+                    self.logger.info("Asks:")
                     for price in sorted(book.asks.keys())[:5]:
-                        print(f"  {price}: {sum(o.remaining_quantity for o in book.asks[price])}")
+                        self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.asks[price])}")
 
     def _generate_random_order(self, symbols: List[str]) -> Order:
         """Generate a random order"""
@@ -180,6 +190,32 @@ class MatchingSystemSimulator:
         client.set_engine_index(index)
 
         return
+
+    def _setup_logging(self):
+        self.log_directory = os.getcwd() + "/logs/simulator_logs/"
+        self.log_file = os.getcwd() + "/logs/simulator_logs/" + self.name
+
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.DEBUG)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(CustomFormatter())
+        self.logger.addHandler(ch)
+
+        if not os.path.exists(self.log_directory):
+            os.makedirs(self.log_directory)
+
+        with open(self.log_file, "w") as file:
+            file.write("")
+
+        fh = logging.FileHandler(self.log_file)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(CustomFormatter())
+        self.logger.addHandler(fh)
+
+        self.logger.info(f"started logging for simulator {self.name} at time {time.time()}")
+
 
         
 
