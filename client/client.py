@@ -24,7 +24,8 @@ class Client:
             name: str, 
             balance: int = 0, 
             positions: dict = {},
-            location: tuple = (0, 0)
+            location: tuple = (0, 0),
+            symbols: list = []
     ):
         self.name = name
         self.log_directory = os.getcwd() + "/logs/client_logs/"
@@ -34,9 +35,16 @@ class Client:
         self.location = location
         self.connected_engine = None
         self.latencies = []
-        
+        self.symbols = symbols
 
         self.setup_logging()
+
+        if not symbols:
+            self.symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
+        else:
+            self.symbols = symbols
+        
+
 
     def setup_logging(self):
         self.logger = logging.getLogger(self.name)
@@ -59,6 +67,7 @@ class Client:
         self.logger.addHandler(fh)
 
         self.logger.info(f"started logging for client {self.name} at time {time.time()}")
+
 
     def connect_to_engine(self, engine): 
         self.connected_engine = engine
@@ -83,9 +92,17 @@ class Client:
 
         if (fills):
             self.update_positions(fills)
-            self.logger.info(f"Filled: {fills}")
+            # self.logger.info(f"Filled: {fills}")
 
         self.logger.info(f"{self.name} received {len(fills)} fills")
+
+    async def run(self):
+        self.logger.info(f"started runnning {self.name}")
+        while(True):
+            await asyncio.sleep(random.random())
+            order = self._generate_random_order()
+            self.submit_order(order)
+            
 
     def update_positions(self, fill):
         pass
@@ -93,11 +110,18 @@ class Client:
     def mean_latency(self):
         return sum(self.latencies) / len(self.latencies)
 
-    def generate_random_order(self, symbols: List[str]) -> Order:
+    def _generate_random_order(self, symbols: list = []) -> Order:
         """Generate a random order"""
+
+        order_symbols = []
+        if symbols:
+            order_symbols = symbols
+        else:
+            order_symbols = self.symbols
+
         return Order(
             order_id=str(uuid.uuid4()),
-            symbol=random.choice(symbols),
+            symbol=random.choice(order_symbols),
             side=random.choice([Side.BUY, Side.SELL]),
             price=round(random.uniform(90, 110), 2),
             quantity=random.randint(1, 100),

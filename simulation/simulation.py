@@ -116,7 +116,7 @@ class MatchingSystemSimulator:
                 
                 # Create random order
 
-                order = client.generate_random_order(symbols)
+                order = client._generate_random_order(symbols)
 
                 # Submit order and measure latency
                 submit_time = time.time()
@@ -210,6 +210,5 @@ class MatchingSystemSimulator:
         self.logger.addHandler(fh)
 
         self.logger.info(f"started logging for simulator {self.name} at time {time.time()}")
-
 
         

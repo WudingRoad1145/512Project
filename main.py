@@ -14,6 +14,7 @@ import grpc
 import grpc.aio
 
 from engine.match_engine import MatchEngine
+from engine.exchange import Exchange
 from engine.synchronizer import OrderBookSynchronizer
 from common.order import Order, Side, OrderStatus
 from network.grpc_server import serve
@@ -21,7 +22,7 @@ from client.client import Client
 from simulation.simulation import MatchingSystemSimulator
 
 
-async def main():
+async def matching_simulation():
     # Initialize gRPC (non-async call)
     grpc.aio.init_grpc_aio()
     
@@ -45,6 +46,42 @@ async def main():
     finally:
         # Cleanup
         await simulator.cleanup()
+
+async def exchange_simulation():
+    # Initialize gRPC (non-async call)
+    grpc.aio.init_grpc_aio()
+
+    exchange = Exchange(
+        num_engines=3,
+        base_port=50051
+    )
+
+    clients = []
+    for i in range(5):
+        clients.append(Client(name=f"Client {i}"))
+
+    await exchange.setup()
+    for client in clients:
+        exchange.add_client(client)
+
+    client_tasks = []
+
+    # start running clients
+    for client in clients:
+        client_tasks.append(asyncio.create_task(client.run()))
+
+    # run sim for 10 seconds
+    await asyncio.sleep(10)
+
+    # cancel client tasks
+    for ctask in client_tasks:
+        ctask.cancel()
+
+    await exchange.cleanup()
+
+async def main():
+    # await matching_simulation()
+    await exchange_simulation()
 
 if __name__ == "__main__":
     asyncio.run(main())
