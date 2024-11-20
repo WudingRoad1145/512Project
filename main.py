@@ -14,17 +14,20 @@ from engine.match_engine import MatchEngine
 from engine.synchronizer import OrderBookSynchronizer
 from common.order import Order, Side, OrderStatus
 from network.grpc_server import serve
+from client.client import Client
 
 class MatchingSystemSimulator:
-    def __init__(self, num_engines: int = 3, base_port: int = 50051):
+    def __init__(self, num_engines: int = 3, num_clients: int = 3, base_port: int = 50051):
         self.num_engines = num_engines
+        self.num_clients = num_clients
         self.base_port = base_port
         self.engines = []
         self.synchronizers = []
         self.servers = []
+        self.clients = []
         
     async def setup(self):
-        """Set up matching engines and synchronizers"""
+        """Set up matching engines, synchronizers, and clients"""
         # Create engines
         for i in range(self.num_engines):
             engine = MatchEngine(f"engine_{i}")
@@ -59,6 +62,12 @@ class MatchingSystemSimulator:
             
         # Wait for servers to start
         await asyncio.sleep(2)
+
+        # Create clients
+        for i in range(self.num_clients):
+            client = Client(f"Client_{i}")
+            self.clients.append(client)
+            self._assign_client(client)
         
     async def cleanup(self):
         """Cleanup resources"""
@@ -69,6 +78,11 @@ class MatchingSystemSimulator:
         # Stop servers
         for server in self.servers:
             await server.stop(grace=None)
+
+        # Disconnect clients
+
+        for client in self.clients:
+            client.disconnect()
         
     async def run_simulation(self, num_orders: int = 1000, symbols: List[str] = None):
         """Run trading simulation"""
@@ -81,16 +95,21 @@ class MatchingSystemSimulator:
         try:
             # Generate and submit orders
             for i in range(num_orders):
+
+                # Create random order
+
                 order = self._generate_random_order(symbols)
                 
-                # Select random engine and its synchronizer
-                engine_idx = random.randrange(len(self.engines))
-                engine = self.engines[engine_idx]
-                synchronizer = self.synchronizers[engine_idx]
+                # Select random client
+
+                client_idx = random.randrange(len(self.clients))
+                client = self.clients[client_idx]
+                engine = self.engines[client.engine_index]
+                synchronizer = self.synchronizers[client.engine_index]
                 
                 # Submit order and measure latency
                 submit_time = time.time()
-                fills = engine.submit_order(order)
+                fills = client.submit_order(order)
                 
                 # Publish the update to peers
                 if fills:
@@ -102,8 +121,8 @@ class MatchingSystemSimulator:
                                for price, orders in orderbook.asks.items()]
                         await synchronizer.publish_update(order.symbol, bids, asks)
                 
-                latency = time.time() - submit_time
-                print(f"Order {i+1}: {order.order_id} executed in {latency*1000:.2f}ms with {len(fills)} fills")
+                    latency = time.time() - submit_time
+                    print(f"Order {i+1}: {order.order_id} executed in {latency*1000:.2f}ms with {len(fills)} fills")
                 
                 # Small delay between orders
                 await asyncio.sleep(0.1)
@@ -150,6 +169,20 @@ class MatchingSystemSimulator:
             engine_id=""
         )
 
+    def _assign_client(self, client):
+        if (not self.engines):
+            return
+
+        # assign clients randomly
+
+        index = random.randint(0, len(self.engines) - 1)
+        client.connect_to_engine(self.engines[index])
+        client.set_engine_index(index)
+
+        return
+
+        
+
 async def main():
     # Initialize gRPC (non-async call)
     grpc.aio.init_grpc_aio()
@@ -157,14 +190,15 @@ async def main():
     # Create simulator with desired configuration
     simulator = MatchingSystemSimulator(
         num_engines=3,
+        num_clients=3,
         base_port=50051
     )
     
     try:
         # Set up the system
         await simulator.setup()
-        
-        # Run simulation
+            
+            # Run simulation
         await simulator.run_simulation(
             num_orders=100
         )
