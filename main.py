@@ -106,9 +106,6 @@ class MatchingSystemSimulator:
             # Generate and submit orders
             for i in range(num_orders):
 
-                # Create random order
-
-                order = self._generate_random_order(symbols)
                 
                 # Select random client
 
@@ -117,6 +114,10 @@ class MatchingSystemSimulator:
                 engine = self.engines[client.engine_index]
                 synchronizer = self.synchronizers[client.engine_index]
                 
+                # Create random order
+
+                order = client.generate_random_order(symbols)
+
                 # Submit order and measure latency
                 submit_time = time.time()
                 fills = client.submit_order(order)
@@ -170,20 +171,6 @@ class MatchingSystemSimulator:
                         if not (sum(o.remaining_quantity for o in book.bids[price]) == 0):
                             self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
 
-    def _generate_random_order(self, symbols: List[str]) -> Order:
-        """Generate a random order"""
-        return Order(
-            order_id=str(uuid.uuid4()),
-            symbol=random.choice(symbols),
-            side=random.choice([Side.BUY, Side.SELL]),
-            price=round(random.uniform(90, 110), 2),
-            quantity=random.randint(1, 100),
-            remaining_quantity=random.randint(1, 100),
-            status=OrderStatus.NEW,
-            timestamp=time.time(),
-            user_id=f"user_{random.randint(1, 10)}",
-            engine_id=""
-        )
 
     def _assign_client(self, client):
         if (not self.engines):
@@ -194,6 +181,8 @@ class MatchingSystemSimulator:
         index = random.randint(0, len(self.engines) - 1)
         client.connect_to_engine(self.engines[index])
         client.set_engine_index(index)
+
+        self.logger.info(f"assigned {client.name} to ME {index}")
 
         return
 
@@ -232,7 +221,7 @@ async def main():
     # Create simulator with desired configuration
     simulator = MatchingSystemSimulator(
         num_engines=3,
-        num_clients=3,
+        num_clients=6,
         base_port=50051
     )
     

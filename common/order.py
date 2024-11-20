@@ -25,6 +25,13 @@ class Order:
     timestamp: datetime
     user_id: str
     engine_id: str
+
+    def pretty_print(self) -> str:
+        if (self.side == Side.SELL):
+            return f"SELL {self.quantity} {self.symbol} @{self.price}"
+        else:
+            return f"BUY {self.quantity} {self.symbol} @{self.price}"
+
     
 # common/orderbook.py
 from typing import Dict, List

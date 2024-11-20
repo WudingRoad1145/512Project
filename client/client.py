@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import asyncio
 import random
+from datetime import datetime as dt
 import time
 from typing import List, Optional
 import uuid
@@ -74,18 +75,35 @@ class Client:
             fills = None
         else:
             send_time = time.time()
-            self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
+            # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
+            self.logger.info(order.pretty_print())
             fills = self.connected_engine.submit_order(order)
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
 
         if (fills):
             self.update_positions(fills)
+            self.logger.info(f"Filled: {fills}")
 
-        self.logger.info(f"{self.name} received {len(fills)} fills for order with ID: {order.order_id}") 
+        self.logger.info(f"{self.name} received {len(fills)} fills")
 
     def update_positions(self, fill):
         pass
 
     def mean_latency(self):
         return sum(self.latencies) / len(self.latencies)
+
+    def generate_random_order(self, symbols: List[str]) -> Order:
+        """Generate a random order"""
+        return Order(
+            order_id=str(uuid.uuid4()),
+            symbol=random.choice(symbols),
+            side=random.choice([Side.BUY, Side.SELL]),
+            price=round(random.uniform(90, 110), 2),
+            quantity=random.randint(1, 100),
+            remaining_quantity=random.randint(1, 100),
+            status=OrderStatus.NEW,
+            timestamp=dt.now(),
+            user_id=self.name,
+            engine_id=self.engine_index
+        )
