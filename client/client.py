@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import random
 import time
-from typing import List
+from typing import List, Optional
 import uuid
 import grpc
 import grpc.aio
@@ -32,7 +32,8 @@ class Client:
         self.positions = positions
         self.location = location
         self.connected_engine = None
-        self.engine_index = -1
+        self.latencies = []
+        
 
         self.setup_logging()
 
@@ -58,8 +59,8 @@ class Client:
 
         self.logger.info(f"started logging for client {self.name} at time {time.time()}")
 
-    def connect_to_engine(self, engine_id): 
-        self.connected_engine = engine_id
+    def connect_to_engine(self, engine): 
+        self.connected_engine = engine
 
     def set_engine_index(self, index):
         self.engine_index = index
@@ -72,9 +73,11 @@ class Client:
             self.logger.error("No matching engine specified")
             fills = None
         else:
-            order_time = time.time()
-            self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {order_time}")
+            send_time = time.time()
+            self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             fills = self.connected_engine.submit_order(order)
+            receive_time = time.time()
+            self.latencies.append(receive_time - send_time)
 
         if (fills):
             self.update_positions(fills)
@@ -84,3 +87,5 @@ class Client:
     def update_positions(self, fill):
         pass
 
+    def mean_latency(self):
+        return sum(self.latencies) / len(self.latencies)

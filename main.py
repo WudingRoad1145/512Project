@@ -135,12 +135,16 @@ class MatchingSystemSimulator:
                     self.logger.info(f"Order {i+1}: {order.order_id} executed in {latency*1000:.2f}ms with {len(fills)} fills")
                 
                 # Small delay between orders
-                await asyncio.sleep(0.1)
+                # await asyncio.sleep(0.1)
                 
             total_time = time.time() - start_time
             self.logger.info(f"\nSimulation completed:")
             self.logger.info(f"Processed {num_orders} orders in {total_time:.2f} seconds")
             self.logger.info(f"Average latency: {(total_time/num_orders)*1000:.2f}ms per order")
+
+            for client in self.clients:
+                self.logger.info(f"{client.name} average latency: {client.mean_latency() * 1_000_000:.3f} us")
+
             
             # Print final order book state
             await self._print_order_books(symbols)
@@ -157,12 +161,14 @@ class MatchingSystemSimulator:
                 if symbol in engine.orderbooks:
                     book = engine.orderbooks[symbol]
                     self.logger.info(f"\nEngine {engine.engine_id}:")
+                    self.logger.info("Asks:")
+                    for price in sorted(book.asks.keys(), reverse=True)[:5]:
+                        if not (sum(o.remaining_quantity for o in book.asks[price]) == 0):
+                            self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.asks[price])}")
                     self.logger.info("Bids:")
                     for price in sorted(book.bids.keys(), reverse=True)[:5]:
-                        self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
-                    self.logger.info("Asks:")
-                    for price in sorted(book.asks.keys())[:5]:
-                        self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.asks[price])}")
+                        if not (sum(o.remaining_quantity for o in book.bids[price]) == 0):
+                            self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
 
     def _generate_random_order(self, symbols: List[str]) -> Order:
         """Generate a random order"""
