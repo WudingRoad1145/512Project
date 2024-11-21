@@ -54,7 +54,7 @@ async def exchange_simulation():
 
     # start running clients
     for client in clients:
-        client_tasks.append(asyncio.create_task(client.run()))
+        await client.run()
 
     # run sim for 10 seconds
     await asyncio.sleep(5)
@@ -63,9 +63,9 @@ async def exchange_simulation():
     for client in clients:
         client.log_positions()
 
-    # cancel client tasks
-    for ctask in client_tasks:
-        ctask.cancel()
+    # stop clients 
+    for client in clients:
+        await client.stop()
 
     await exchange.cleanup()
 

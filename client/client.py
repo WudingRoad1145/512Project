@@ -34,6 +34,8 @@ class Client:
         self.symbols = symbols
         self.delay_factor = delay_factor
 
+        self.running = False
+
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
         if not symbols:
@@ -63,10 +65,19 @@ class Client:
 
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
-        while True:
+        self.running = True
+        asyncio.create_task(self.run_loop())
+
+    async def run_loop(self):
+        while self.running:
             await asyncio.sleep(random.random() * self.delay_factor)
             order = self._generate_random_order()
             await self.submit_order(order)
+
+    async def stop(self):
+        self.running = False
+
+        # TODO: cancel all orders
 
     async def react_to_fill(self, fill):
         self.logger.info(f"FILLED: {fill.pretty_print()}")
