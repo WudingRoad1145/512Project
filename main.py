@@ -50,16 +50,19 @@ async def matching_simulation():
 async def exchange_simulation():
     # Initialize gRPC (non-async call)
     grpc.aio.init_grpc_aio()
+    symbol_list = ["AAPL", "TSLA", "NVDA"]
 
     exchange = Exchange(
-        num_engines=1,
+        num_engines=3,
         base_port=50051,
-        symbols=["AAPL"]
+        symbols=symbol_list
     )
 
+
+    # specify number of clients
     clients = []
-    for i in range(5):
-        clients.append(Client(name=f"Client {i}", symbols=["AAPL"]))
+    for i in range(50):
+        clients.append(Client(name=f"Client {i}", symbols=symbol_list, delay_factor=0.1))
 
     await exchange.setup()
     for client in clients:
@@ -72,11 +75,16 @@ async def exchange_simulation():
         client_tasks.append(asyncio.create_task(client.run()))
 
     # run sim for 10 seconds
-    await asyncio.sleep(2)
+    await asyncio.sleep(5)
+
+    # get client positions
+    for client in clients:
+        client.log_positions()
 
     # cancel client tasks
     for ctask in client_tasks:
         ctask.cancel()
+
 
     await exchange.cleanup()
 

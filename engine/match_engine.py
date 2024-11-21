@@ -28,8 +28,15 @@ class MatchEngine:
         
         if order.symbol not in self.orderbooks:
             self.create_orderbook(order.symbol)
+
+        if order.quantity != order.remaining_quantity:
+            self.logger.warning(f"order from {order.client_id} with properties {order.pretty_print()} is malformed\nReason: quantity is not equal to remaining_quantity")
+            order.remaining_quantity = order.quantity
             
         fills = self.orderbooks[order.symbol].add_order(order)
+
+        # NOTE: Turn on this to see order book state after each order
+        # self.logger.debug(str(self.orderbooks[order.symbol]))
         if fills:
             await self.send_fills(fills)
 
@@ -38,6 +45,7 @@ class MatchEngine:
     async def send_fills(self, fills):
         incoming_fills = fills['incoming_fills']
         resting_fills = fills['resting_fills']
+
 
         try:
             for client_id, fill in incoming_fills:

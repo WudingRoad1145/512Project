@@ -25,17 +25,19 @@ class Client:
             balance: int = 0, 
             positions: dict = {},
             location: tuple = (0, 0),
-            symbols: list = []
+            symbols: list = [],
+            delay_factor: int = 1
     ):
         self.name = name
         self.log_directory = os.getcwd() + "/logs/client_logs/"
         self.log_file = os.getcwd() + "/logs/client_logs/" + name
         self.balance = balance
-        self.positions = positions
+        self.positions = positions.copy()
         self.location = location
         self.connected_engine = None
         self.latencies = []
         self.symbols = symbols
+        self.delay_factor = delay_factor
 
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
@@ -68,7 +70,7 @@ class Client:
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         while(True):
-            await asyncio.sleep(random.random())
+            await asyncio.sleep(random.random() * self.delay_factor)
             order = self._generate_random_order()
             await self.submit_order(order)
             
@@ -76,8 +78,20 @@ class Client:
         self.logger.info(f"FILLED: {fill.pretty_print()}")
         self.update_positions(fill)
 
-    def update_positions(self, fill):
-        pass
+    def update_positions(self, fill: Fill):
+        if (fill.symbol not in self.positions.keys()):
+            self.positions.update({fill.symbol : 0})
+        if (fill.buyer_id == self.name):
+            self.balance -= fill.quantity * fill.price
+            self.positions[fill.symbol] += fill.quantity
+        if (fill.seller_id == self.name):
+            self.balance += fill.quantity * fill.price
+            self.positions[fill.symbol] -= fill.quantity
+
+    def log_positions(self):
+        self.logger.info(f"Name: {self.name}")
+        self.logger.info(f"Balance: {round(self.balance, 2)}")
+        self.logger.info(f"Positions: \n {self.positions}")
 
     def mean_latency(self):
         return sum(self.latencies) / len(self.latencies)
@@ -91,13 +105,22 @@ class Client:
         else:
             order_symbols = self.symbols
 
+        gen_quantity = random.randint(1, 100)
+
+        if gen_quantity % 2 == 0:
+            gen_side = Side.SELL
+            gen_price = round(random.uniform(95, 105), 2)
+        else:
+            gen_side = Side.BUY
+            gen_price = round(random.uniform(90, 100), 2)
+
         return Order(
             order_id=str(uuid.uuid4()),
             symbol=random.choice(order_symbols),
-            side=random.choice([Side.BUY, Side.SELL]),
-            price=round(random.uniform(90, 110), 2),
-            quantity=random.randint(1, 100),
-            remaining_quantity=random.randint(1, 100),
+            side=gen_side,
+            price=gen_price,
+            quantity=gen_quantity,
+            remaining_quantity=gen_quantity,
             status=OrderStatus.NEW,
             timestamp=dt.now(),
             client_id=self.name,

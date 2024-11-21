@@ -8,6 +8,22 @@ class OrderBook:
         self.symbol = symbol
         self.bids: Dict[float, List[Order]] = defaultdict(list)
         self.asks: Dict[float, List[Order]] = defaultdict(list)
+
+    def __repr__(self):
+        """Print state of this order book"""
+
+        rep = ""
+        rep += f"\nOrder book for {self.symbol}:"
+        rep += f"\nAsks:\n"
+        for price in sorted(self.asks.keys(), reverse=True):
+            if not (sum(o.remaining_quantity for o in self.asks[price]) == 0):
+                rep += (f"\n\t{price}: {sum(o.remaining_quantity for o in self.asks[price])}")
+        rep += f"\nBids:\n"
+        for price in sorted(self.bids.keys(), reverse=True):
+            if not (sum(o.remaining_quantity for o in self.bids[price]) == 0):
+                rep += (f"\n\t{price}: {sum(o.remaining_quantity for o in self.bids[price])}")
+
+        return rep
         
     def add_order(self, order: Order):
         """Add order to book and return list of fills"""
@@ -20,15 +36,18 @@ class OrderBook:
             for price in sorted(self.asks.keys()):
                 if price > order.price or order.remaining_quantity <= 0:
                     break
-                fills['incoming_fills'].extend(self._match_order_at_price(order, price)['incoming_fills'])
-                fills['resting_fills'].extend(self._match_order_at_price(order, price)['resting_fills'])
+
+                updated_fills = self._match_order_at_price(order, price)
+                fills['incoming_fills'].extend(updated_fills['incoming_fills'])
+                fills['resting_fills'].extend(updated_fills['resting_fills'])
         else:
             # Match against bids
             for price in sorted(self.bids.keys(), reverse=True):
                 if price < order.price or order.remaining_quantity <= 0:
                     break
-                fills['incoming_fills'].extend(self._match_order_at_price(order, price)['incoming_fills'])
-                fills['resting_fills'].extend(self._match_order_at_price(order, price)['resting_fills'])
+                updated_fills = self._match_order_at_price(order, price)
+                fills['incoming_fills'].extend(updated_fills['incoming_fills'])
+                fills['resting_fills'].extend(updated_fills['resting_fills'])
                 
         # Add remaining quantity to book
         if order.remaining_quantity > 0:
@@ -51,6 +70,7 @@ class OrderBook:
                 fill_qty = min(incoming_order.remaining_quantity, resting_order.remaining_quantity)
                 if fill_qty <= 0:
                     continue
+
                     
                 # Update quantities
                 incoming_order.remaining_quantity -= fill_qty
@@ -134,5 +154,5 @@ class OrderBook:
                 if resting_order.remaining_quantity <= 0:
                     orders.remove(resting_order)
 
-                
+
         return {'incoming_fills' : incoming_fills, 'resting_fills' : resting_fills}

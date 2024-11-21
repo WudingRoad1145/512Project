@@ -103,24 +103,33 @@ class Exchange:
         for client in self.clients:
             client.disconnect()
 
-        await self._print_order_books(self.symbols)
+        await self._print_order_books(self.symbols, num_levels=5)
             
-    async def _print_order_books(self, symbols: List[str]):
+    async def _print_order_books(self, symbols: List[str], num_levels: int = 1_000):
         """Print final state of all order books"""
         for symbol in symbols:
-            self.logger.info(f"\nOrder book for {symbol}:")
+            self.logger.info(f"Order book for {symbol}: (depth {num_levels})")
             for engine in self.engines:
                 if symbol in engine.orderbooks:
                     book = engine.orderbooks[symbol]
-                    self.logger.info(f"\nEngine {engine.engine_id}:")
-                    self.logger.info("Asks:")
-                    for price in sorted(book.asks.keys(), reverse=True)[:5]:
-                        if not (sum(o.remaining_quantity for o in book.asks[price]) == 0):
-                            self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.asks[price])}")
-                    self.logger.info("Bids:")
-                    for price in sorted(book.bids.keys(), reverse=True)[:5]:
-                        if not (sum(o.remaining_quantity for o in book.bids[price]) == 0):
-                            self.logger.info(f"  {price}: {sum(o.remaining_quantity for o in book.bids[price])}")
+                    self.logger.info(f"Engine {engine.engine_id}:")
+                    ask_str = ""
+
+                    num_ask_levels = 1
+                    for price in sorted(book.asks.keys()):
+                        if not (sum(o.remaining_quantity for o in book.asks[price]) == 0 or num_ask_levels > num_levels):
+                            ask_str = (f"\n\t{price}: {sum(o.remaining_quantity for o in book.asks[price])}") + ask_str
+                            num_ask_levels += 1
+                    self.logger.info("\nAsks: \n" + ask_str)
+
+                    bid_str = ""
+                    num_bid_levels = 1
+                    for price in sorted(book.bids.keys(), reverse=True):
+                        if not (sum(o.remaining_quantity for o in book.bids[price]) == 0 or num_bid_levels > num_levels):
+                            bid_str += (f"\n\t{price}: {sum(o.remaining_quantity for o in book.bids[price])}")
+                            num_bid_levels += 1
+
+                    self.logger.info("\nBids: \n" + bid_str)
 
 
     def _assign_client(self, client):
