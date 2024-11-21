@@ -1,4 +1,5 @@
 import logging
+import os
 
 class CustomFormatter(logging.Formatter):
 
@@ -22,3 +23,34 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, "%Y-%m-%d %H:%M:%S")
         return formatter.format(record)
+
+class LogFactory:
+    def __init__(self, name, log_directory):
+        self.name = name
+        self.log_directory = log_directory
+        self.log_file = log_directory + f"{name}.log"
+
+
+    def get_logger(self):
+        logger = logging.getLogger(self.name)
+        logger.setLevel(logging.DEBUG)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(CustomFormatter())
+        logger.addHandler(ch)
+
+        if not os.path.exists(self.log_directory):
+            os.makedirs(self.log_directory)
+
+        with open(self.log_file, "w") as file:
+            file.write("")
+
+        fh = logging.FileHandler(self.log_file)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(CustomFormatter())
+        logger.addHandler(fh)
+
+        return logger
+
+

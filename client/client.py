@@ -12,10 +12,10 @@ import grpc
 import grpc.aio
 import logging
 
-from client.custom_formatter import CustomFormatter
+from client.custom_formatter import CustomFormatter, LogFactory
 from engine.match_engine import MatchEngine
 from engine.synchronizer import OrderBookSynchronizer
-from common.order import Order, Side, OrderStatus
+from common.order import Order, Side, OrderStatus, Fill
 from network.grpc_server import serve
 
 class Client:
@@ -37,38 +37,13 @@ class Client:
         self.latencies = []
         self.symbols = symbols
 
-        self.setup_logging()
+        self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
         if not symbols:
             self.symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
         else:
             self.symbols = symbols
         
-
-
-    def setup_logging(self):
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.DEBUG)
-
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(CustomFormatter())
-        self.logger.addHandler(ch)
-
-        if not os.path.exists(self.log_directory):
-            os.makedirs(self.log_directory)
-
-        with open(self.log_file, "w") as file:
-            file.write("")
-
-        fh = logging.FileHandler(self.log_file)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(CustomFormatter())
-        self.logger.addHandler(fh)
-
-        self.logger.info(f"started logging for client {self.name} at time {time.time()}")
-
-
     def connect_to_engine(self, engine): 
         self.connected_engine = engine
 
@@ -78,31 +53,28 @@ class Client:
     def disconnect(self): 
         self.connected_engine = None
 
-    def submit_order(self, order: Order):
+    async def submit_order(self, order: Order):
         if (self.connected_engine is None):
             self.logger.error("No matching engine specified")
             fills = None
         else:
             send_time = time.time()
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
-            self.logger.info(order.pretty_print())
-            fills = self.connected_engine.submit_order(order)
+            self.logger.info(f"{self.name}: {order.pretty_print()}")
+            fills = await self.connected_engine.submit_order(order)
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
-
-        if (fills):
-            self.update_positions(fills)
-            # self.logger.info(f"Filled: {fills}")
-
-        self.logger.info(f"{self.name} received {len(fills)} fills")
 
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         while(True):
             await asyncio.sleep(random.random())
             order = self._generate_random_order()
-            self.submit_order(order)
+            await self.submit_order(order)
             
+    async def react_to_fill(self, fill):
+        self.logger.info(f"FILLED: {fill.pretty_print()}")
+        self.update_positions(fill)
 
     def update_positions(self, fill):
         pass
@@ -128,6 +100,6 @@ class Client:
             remaining_quantity=random.randint(1, 100),
             status=OrderStatus.NEW,
             timestamp=dt.now(),
-            user_id=self.name,
+            client_id=self.name,
             engine_id=self.engine_index
         )

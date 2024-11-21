@@ -1,20 +1,27 @@
 import uuid
+import os
+import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional
 from common.order import Order, OrderStatus
 from common.orderbook import OrderBook
+from client.custom_formatter import CustomFormatter, LogFactory
 
 class MatchEngine:
     def __init__(self, engine_id: str):
         self.engine_id = engine_id
         self.orderbooks: Dict[str, OrderBook] = {}
         self.orders: Dict[str, Order] = {}
+        self.clients = {}
+
+        self.log_directory = os.getcwd() + "/logs/engine_logs/"
+        self.logger = LogFactory(f"ME {self.engine_id}", self.log_directory).get_logger()
         
     def create_orderbook(self, symbol: str) -> None:
         if symbol not in self.orderbooks:
             self.orderbooks[symbol] = OrderBook(symbol)
             
-    def submit_order(self, order: Order) -> List[Order]:
+    async def submit_order(self, order: Order):
         """Submit new order to matching engine"""
         order.engine_id = self.engine_id
         self.orders[order.order_id] = order
@@ -23,8 +30,33 @@ class MatchEngine:
             self.create_orderbook(order.symbol)
             
         fills = self.orderbooks[order.symbol].add_order(order)
+        if fills:
+            await self.send_fills(fills)
+
         return fills
-        
+
+    async def send_fills(self, fills):
+        incoming_fills = fills['incoming_fills']
+        resting_fills = fills['resting_fills']
+
+        try:
+            for client_id, fill in incoming_fills:
+            # TODO: Use gRPC here
+                await self.clients[client_id].react_to_fill(fill)
+
+            for client_id, fill in resting_fills:
+            # TODO: Use gRPC here
+                await self.clients[client_id].react_to_fill(fill)
+
+        except Exception as e:
+            print(f"Exception in matching engine {self.engine_id} while sending fills: {e}")
+        finally:
+            pass
+        return
+
+    def add_client(self, client):
+        self.clients.update({client.name : client})
+
     def cancel_order(self, order_id: str) -> Optional[Order]:
         """Cancel existing order"""
         if order_id not in self.orders:

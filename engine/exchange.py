@@ -18,6 +18,7 @@ from engine.synchronizer import OrderBookSynchronizer
 from common.order import Order, Side, OrderStatus
 from network.grpc_server import serve
 from client.client import Client
+from client.custom_formatter import LogFactory
 
 class Exchange:
     """ Class that initializes matching engines, synchronizers, and bootstraps
@@ -33,6 +34,10 @@ class Exchange:
         self.servers = []
         self.clients = []
 
+        # logging
+        self.log_directory = os.getcwd() + "/logs/exchange_logs/"
+        self.logger = LogFactory(self.name, self.log_directory).get_logger()
+
         if not symbols:
             self.symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
         else:
@@ -42,10 +47,6 @@ class Exchange:
         
     async def setup(self):
         """Set up matching engines, synchronizers, and logging"""
-
-        # setup logging
-
-        self._setup_logging()
 
         # Create engines
         for i in range(self.num_engines):
@@ -97,8 +98,7 @@ class Exchange:
         # Stop servers
         for server in self.servers:
             await server.stop(grace=None)
-
-        # Disconnect clients
+# Disconnect clients
 
         for client in self.clients:
             client.disconnect()
@@ -130,39 +130,19 @@ class Exchange:
         # assign clients randomly
 
         index = random.randint(0, len(self.engines) - 1)
+
+        # add engine to the client
         client.connect_to_engine(self.engines[index])
         client.set_engine_index(index)
+
+        # add client to the engine
+        self.engines[index].add_client(client)
 
         me_address = f"127.0.0.1:{self.base_port + index}"
         self.logger.info(f"assigned {client.name} to ME {index} at address {me_address}")
 
         return (index, me_address)
 
-
-    def _setup_logging(self):
-        self.log_directory = os.getcwd() + "/logs/exchange_logs/"
-        self.log_file = os.getcwd() + "/logs/exchange_logs/" + self.name
-
-        self.logger = logging.getLogger(f"{self.name}")
-        self.logger.setLevel(logging.DEBUG)
-
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(CustomFormatter())
-        self.logger.addHandler(ch)
-
-        if not os.path.exists(self.log_directory):
-            os.makedirs(self.log_directory)
-
-        with open(self.log_file, "w") as file:
-            file.write("")
-
-        fh = logging.FileHandler(self.log_file)
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(CustomFormatter())
-        self.logger.addHandler(fh)
-
-        self.logger.info(f"started logging for simulator {self.name} at time {time.time()}")
 
 
         

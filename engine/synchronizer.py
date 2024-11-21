@@ -137,7 +137,7 @@ class OrderBookSynchronizer:
                     remaining_quantity=update.quantity,
                     status=OrderStatus.NEW,
                     timestamp=time.time(),
-                    user_id=update.user_id,
+                    client_id=update.client_id,
                     engine_id=update.engine_id
                 )
                 

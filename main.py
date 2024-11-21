@@ -52,13 +52,14 @@ async def exchange_simulation():
     grpc.aio.init_grpc_aio()
 
     exchange = Exchange(
-        num_engines=3,
-        base_port=50051
+        num_engines=1,
+        base_port=50051,
+        symbols=["AAPL"]
     )
 
     clients = []
     for i in range(5):
-        clients.append(Client(name=f"Client {i}"))
+        clients.append(Client(name=f"Client {i}", symbols=["AAPL"]))
 
     await exchange.setup()
     for client in clients:
@@ -71,7 +72,7 @@ async def exchange_simulation():
         client_tasks.append(asyncio.create_task(client.run()))
 
     # run sim for 10 seconds
-    await asyncio.sleep(10)
+    await asyncio.sleep(2)
 
     # cancel client tasks
     for ctask in client_tasks:

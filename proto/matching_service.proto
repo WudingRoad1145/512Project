@@ -24,7 +24,7 @@ message Order {
     string side = 3;  // BUY or SELL
     double price = 4;
     double quantity = 5;
-    string user_id = 6;
+    string client_id = 6;
     int64 timestamp = 7;
 }
 
@@ -49,7 +49,7 @@ message Fill {
 // Request to cancel an order
 message CancelOrderRequest {
     string order_id = 1;
-    string user_id = 2;
+    string client_id = 2;
 }
 
 // Response to cancel request
