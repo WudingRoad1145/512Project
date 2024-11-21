@@ -5,9 +5,9 @@ import grpc
 import grpc.aio
 
 from common.order import Order, OrderStatus
-from common.orderbook import OrderBook
 import proto.matching_service_pb2 as pb2
 import proto.matching_service_pb2_grpc as pb2_grpc
+
 
 class OrderBookSynchronizer:
     def __init__(self, engine_id: str, peer_addresses: List[str]):
@@ -32,7 +32,7 @@ class OrderBookSynchronizer:
         self.running = False
         # Close all gRPC channels
         for stub in self.peer_stubs.values():
-            if hasattr(stub, '_channel'):
+            if hasattr(stub, "_channel"):
                 await stub._channel.close()
 
     async def _connect_to_peers(self):
@@ -63,7 +63,7 @@ class OrderBookSynchronizer:
                     await asyncio.sleep(0.1)
                 except Exception as e:
                     print(f"Error processing peer updates: {e}")
-                
+
             except Exception as e:
                 print(f"Sync error: {e}")
                 await asyncio.sleep(1)
@@ -71,19 +71,17 @@ class OrderBookSynchronizer:
     async def _broadcast_update(self, update: dict):
         """Broadcast update to all peer engines"""
         pb_update = pb2.OrderBookUpdate(
-            symbol=update['symbol'],
+            symbol=update["symbol"],
             sequence_number=self.sequence_number,
             engine_id=self.engine_id,
-            bids=[pb2.PriceLevel(
-                price=price,
-                quantity=qty,
-                order_count=count
-            ) for price, qty, count in update['bids']],
-            asks=[pb2.PriceLevel(
-                price=price,
-                quantity=qty,
-                order_count=count
-            ) for price, qty, count in update['asks']]
+            bids=[
+                pb2.PriceLevel(price=price, quantity=qty, order_count=count)
+                for price, qty, count in update["bids"]
+            ],
+            asks=[
+                pb2.PriceLevel(price=price, quantity=qty, order_count=count)
+                for price, qty, count in update["asks"]
+            ],
         )
 
         # Broadcast to all peers
@@ -109,11 +107,14 @@ class OrderBookSynchronizer:
                     # Get updates from peer
                     request = pb2.GetOrderBookRequest()
                     updates = await stub.GetOrderBook(request)
-                    
+
                     # Process each update
-                    if hasattr(updates, 'sequence_number') and updates.sequence_number > self.sequence_number:
+                    if (
+                        hasattr(updates, "sequence_number")
+                        and updates.sequence_number > self.sequence_number
+                    ):
                         await self._apply_update(updates)
-                            
+
                 except Exception as e:
                     print(f"Error processing updates from {address}: {e}")
 
@@ -122,11 +123,11 @@ class OrderBookSynchronizer:
         async with self.lock:
             # Update sequence number
             self.sequence_number = max(self.sequence_number, update.sequence_number)
-            
+
             # Add to known orders if it's an order update
-            if hasattr(update, 'order_id') and update.order_id not in self.known_orders:
+            if hasattr(update, "order_id") and update.order_id not in self.known_orders:
                 self.known_orders.add(update.order_id)
-                
+
                 # Convert protobuf update to internal format
                 order = Order(
                     order_id=update.order_id,
@@ -138,18 +139,18 @@ class OrderBookSynchronizer:
                     status=OrderStatus.NEW,
                     timestamp=time.time(),
                     client_id=update.client_id,
-                    engine_id=update.engine_id
+                    engine_id=update.engine_id,
                 )
-                
+
                 return order
 
     async def publish_update(self, symbol: str, bids: List[tuple], asks: List[tuple]):
         """Publish an order book update to peers"""
         update = {
-            'symbol': symbol,
-            'bids': bids,
-            'asks': asks,
-            'timestamp': time.time()
+            "symbol": symbol,
+            "bids": bids,
+            "asks": asks,
+            "timestamp": time.time(),
         }
         await self.update_queue.put(update)
         self.sequence_number += 1

@@ -1,17 +1,19 @@
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
-from typing import Optional
+
 
 class Side(Enum):
     BUY = "BUY"
     SELL = "SELL"
+
 
 class OrderStatus(Enum):
     NEW = "NEW"
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
     FILLED = "FILLED"
     CANCELLED = "CANCELLED"
+
 
 @dataclass
 class Order:
@@ -27,10 +29,11 @@ class Order:
     engine_id: str
 
     def pretty_print(self) -> str:
-        if (self.side == Side.SELL):
+        if self.side == Side.SELL:
             return f"SELL {self.quantity} {self.symbol} @{self.price}"
         else:
             return f"BUY {self.quantity} {self.symbol} @{self.price}"
+
 
 @dataclass
 class Fill:
@@ -47,8 +50,7 @@ class Fill:
     engine_id: str
 
     def pretty_print(self) -> str:
-        if (self.side == Side.SELL):
+        if self.side == Side.SELL:
             return f"{self.seller_id} SOLD {self.quantity} {self.symbol} @{self.price} to {self.buyer_id}"
         else:
             return f"{self.buyer_id} BOUGHT {self.quantity} {self.symbol} @{self.price} from {self.seller_id}"
-    
