@@ -31,6 +31,8 @@ class Client:
         location: tuple = (0, 0),
         symbols: list = [],
         delay_factor: int = 1,
+        exchange_addr: str = "127.0.0.1:50050",
+        me_addr: str = ""
     ):
         self.name = name
         self.log_directory = os.getcwd() + "/logs/client_logs/"
@@ -42,6 +44,9 @@ class Client:
         self.latencies = []
         self.symbols = symbols
         self.delay_factor = delay_factor
+        self.exchange_addr = exchange_addr
+        self.me_addr = me_addr
+        self.connected_to_me = False
 
         self.running = False
 
@@ -52,18 +57,8 @@ class Client:
         else:
             self.symbols = symbols
 
-    def connect_to_engine(self, engine):
-        self.connected_engine = engine
-        self.connected_engine_addr = "127.0.0.1:50051"
-
-    def set_engine_index(self, index):
-        self.engine_index = index
-
-    def disconnect(self):
-        self.connected_engine = None
-
     async def submit_order(self, order: Order, stub):
-        if self.connected_engine is None:
+        if not self.connected_to_me:
             self.logger.error("No matching engine recorded")
         else:
             send_time = time.time()
@@ -87,28 +82,55 @@ class Client:
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
 
+    async def get_fills_and_update(self, stub):
+        fills = []
+        if not self.connected_to_me:
+            self.logger.error("No matching engine recorded")
+        else:
+            for fill in stub.GetFills(pb2.FillRequest(
+                client_id=self.name,
+                engine_id="Unused", # NOTE: Unused
+                timeout=1_000 # NOTE: Unused
+            )):
+                self.update_positions(fill)
+
+    async def register(self):
+    # TODO: Change this to first go to the exchange layer
+
+        with grpc.insecure_channel(self.me_addr) as channel:
+            stub = pb2_grpc.MatchingServiceStub(channel)
+            response = stub.RegisterClient(pb2.ClientRegistrationRequest(
+                client_id=self.name,
+                client_authentication="password",
+                client_x=0,
+                client_y=0,
+            ))
+
+        return response
+
+
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         self.running = True
-        asyncio.create_task(self.run_loop())
+        registration_response = await self.register()
+
+        if ("SUCCESSFUL" in registration_response.status):
+            asyncio.create_task(self.run_loop())
+        else:
+            self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")
 
     async def run_loop(self):
-
-        with grpc.insecure_channel(self.connected_engine_addr) as channel:
+        with grpc.insecure_channel(self.me_addr) as channel:
             stub = pb2_grpc.MatchingServiceStub(channel)
             while self.running:
                 await asyncio.sleep(random.random() * self.delay_factor)
                 order = self._generate_random_order()
+                await self.get_fills_and_update(stub)
                 await self.submit_order(order, stub)
 
     async def stop(self):
         self.running = False
-
         # TODO: cancel all orders
-
-    async def react_to_fill(self, fill):
-        self.logger.info(f"FILLED: {fill.pretty_print()}")
-        self.update_positions(fill)
 
     def update_positions(self, fill: Fill):
         if fill.symbol not in self.positions.keys():
@@ -156,5 +178,5 @@ class Client:
             status=OrderStatus.NEW,
             timestamp=dt.now(),
             client_id=self.name,
-            engine_id=self.engine_index,
+            engine_id="", # NOTE: Unused
         )

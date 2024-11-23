@@ -9,7 +9,7 @@ from typing import List
 
 from engine.match_engine import MatchEngine
 from engine.synchronizer import OrderBookSynchronizer
-from network.grpc_server import serve
+from network.grpc_server import serve_ME
 from client.client import Client
 from client.custom_formatter import LogFactory
 
@@ -66,7 +66,7 @@ class Exchange:
 
             # Start gRPC server
             try:
-                server = await serve(engine, f"127.0.0.1:{self.base_port + i}")
+                server = await serve_ME(engine, f"127.0.0.1:{self.base_port + i}")
                 self.servers.append(server)
                 self.logger.info(f"Started server {i} on port {self.base_port + i}")
             except Exception as e:

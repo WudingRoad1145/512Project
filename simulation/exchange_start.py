@@ -7,7 +7,7 @@ sys.path.append(os.getcwd())
 from engine.match_engine import MatchEngine
 from engine.exchange import Exchange
 from engine.synchronizer import OrderBookSynchronizer
-from network.grpc_server import MatchingServicer, serve
+from network.grpc_server import MatchingServicer, serve_ME
 
 from client.custom_formatter import LogFactory
 
@@ -47,7 +47,7 @@ async def main():
 
         # Start gRPC server
         try:
-            server = await serve(engine, f"127.0.0.1:{base_port + i}")
+            server = await serve_ME(engine, f"127.0.0.1:{base_port + i}")
             servers.append(server)
             logger.info(f"Started server {i} on port {base_port + i}")
         except Exception as e:

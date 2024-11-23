@@ -11,6 +11,7 @@ import random
 class MatchingServicer(pb2_grpc.MatchingServiceServicer):
     def __init__(self, engine: MatchEngine):
         self.engine = engine
+        self.clients = []
 
     async def SubmitOrder(self, request, context):
         try:
@@ -59,17 +60,37 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 engine_id=fill.engine_id,
             )
 
+    async def RegisterClient(self, request, context):
+        if (self.authenticate(request.client_id, request.client_authentication)):
+            self.clients.append(request.client_id)
+            return pb2.ClientRegistrationResponse(
+                status="SUCCESFUL_AT_ME",
+                match_engine_address=""
+            )
+        else:
+            return pb2.ClientRegistrationResponse(
+                status="ME_AUTHENTICATION_FAILED",
+                match_engine_address=""
+            )
+
+    def authenticate(self, client_id : str, client_authentication : str):
+        # TODO: Add a proper authentication system (simple)
+        if (client_authentication == ""):
+            return True
+        return True
+    
+
 class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
     def __init__(self, matching_engine_locs : Dict[str, tuple[int, int]], name : str = "Exchange"):
         self.name = name
         self.matching_engine_locs = matching_engine_locs
 
-    def RegisterClient(self, request, context):
+    async def RegisterClient(self, request, context):
         if (self.authenticate(request.client_id, request.client_authentication)):
             me_addr = self.assign_client(request.client_x, request.client_y)
             if me_addr:
                 return pb2.ClientRegistrationResponse(
-                    status="SUCCESSFUL",
+                    status="SUCCESSFUL_AT_EXCHANGE",
                     match_engine_address=me_addr
                 )
             else:
@@ -79,7 +100,7 @@ class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
                 )
         else:
             return pb2.ClientRegistrationResponse(
-                status="AUTHENTICATION_FAILED",
+                status="EXCHANGE_AUTHENTICATION_FAILED",
                 match_engine_address=""
             )
 
@@ -94,7 +115,7 @@ class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
         return random.choice(list(self.matching_engine_locs.keys()))
 
 
-async def serve(engine: MatchEngine, address: str) -> aio.Server:
+async def serve_ME(engine: MatchEngine, address: str) -> aio.Server:
     """Start gRPC server"""
     # Create server using aio specifically
     server = aio.server()
@@ -109,11 +130,35 @@ async def serve(engine: MatchEngine, address: str) -> aio.Server:
 
         # Start the server
         await server.start()
-        engine.logger.info(f"Server started on {address}")
+        engine.logger.info(f"ME Server started on {address}")
 
         return server
 
     except Exception as e:
-        engine.logger.info(f"Error starting server: {e}")
+        engine.logger.info(f"Error starting ME server: {e}")
+        await server.stop(0)
+        raise
+
+async def serve_exchange(me_locs: Dict[str, tuple[int, int]], address: str, logger) -> aio.Server:
+    """Start gRPC server"""
+    # Create server using aio specifically
+    server = aio.server()
+
+    # Add the service
+    service = ExchangeServicer(me_locs)
+    pb2_grpc.add_MatchingServiceServicer_to_server(service, server)
+
+    try:
+        # Add the port
+        server.add_insecure_port(address)
+
+        # Start the server
+        await server.start()
+        logger.info(f"Exchange Server started on {address}")
+
+        return server
+
+    except Exception as e:
+        logger.info(f"Error starting Exchange server: {e}")
         await server.stop(0)
         raise
