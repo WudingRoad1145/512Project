@@ -115,6 +115,8 @@ class Client:
         registration_response = await self.register()
 
         if ("SUCCESSFUL" in registration_response.status):
+            # TODO: Modify self.me_addr to have the address given in the response
+            self.connected_to_me = True
             asyncio.create_task(self.run_loop())
         else:
             self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")

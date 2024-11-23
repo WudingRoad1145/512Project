@@ -15,7 +15,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
     async def SubmitOrder(self, request, context):
         try:
-            order = self.engine.submit_order(request)
+            order = await self.engine.submit_order(request)
             return pb2.SubmitOrderResponse(order_id=request.order_id, status="SUCCESS")
         except Exception as e:
             return pb2.SubmitOrderResponse(
@@ -43,7 +43,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         # TODO - rn just return empty order book
         return pb2.OrderBook(symbol=request.symbol)
 
-    async def GetFillStream(self, request, context):
+    async def GetFills(self, request, context):
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
             yield pb2.FillResponse(
@@ -63,8 +63,9 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
     async def RegisterClient(self, request, context):
         if (self.authenticate(request.client_id, request.client_authentication)):
             self.clients.append(request.client_id)
+            self.engine.register_client(request.client_id)
             return pb2.ClientRegistrationResponse(
-                status="SUCCESFUL_AT_ME",
+                status="SUCCESSFUL_AT_ME",
                 match_engine_address=""
             )
         else:
@@ -131,7 +132,7 @@ async def serve_ME(engine: MatchEngine, address: str) -> aio.Server:
         # Start the server
         await server.start()
         engine.logger.info(f"ME Server started on {address}")
-
+        await server.wait_for_termination()
         return server
 
     except Exception as e:

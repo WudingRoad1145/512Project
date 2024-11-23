@@ -16,7 +16,7 @@ from client.custom_formatter import LogFactory
 async def main():
 
 
-    NUM_ENGINES = 5
+    NUM_ENGINES = 1
     engines = []
     synchronizers = []
     servers = []

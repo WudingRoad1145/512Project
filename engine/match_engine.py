@@ -67,9 +67,13 @@ class MatchEngine:
             pass
         return
 
-    def register_client(self, client):
-        self.clients.append(client.name)
-        self.fill_queues.update({client.name : queue.Queue()})
+    def register_client(self, client_name):
+        if client_name not in self.clients:
+            self.clients.append(client_name)
+            self.fill_queues.update({client_name : queue.Queue()})
+            self.logger.info(f"Registered client {client_name}")
+        else:
+            self.logger.warning(f"Attempted duplicate registration of client {client_name}")
 
     def cancel_order(self, order_id: str) -> Optional[Order]:
         """Cancel existing order"""
