@@ -35,13 +35,13 @@ async def matching_simulation():
 async def exchange_simulation():
     # Initialize gRPC (non-async call)
     grpc.aio.init_grpc_aio()
-    symbol_list = ["AAPL", "TSLA", "NVDA"]
+    symbol_list = ["AAPL", "TSLA"]
 
     exchange = Exchange(num_engines=3, base_port=50051, symbols=symbol_list)
 
     # specify number of clients
     clients = []
-    for i in range(50):
+    for i in range(5):
         clients.append(
             Client(name=f"Client {i}", symbols=symbol_list, delay_factor=0.1)
         )

@@ -6,14 +6,23 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import random
 from datetime import datetime as dt
+from datetime import timezone
+import pytz
+
 import time
 import uuid
 
 from client.custom_formatter import LogFactory
 from common.order import Order, Side, OrderStatus, Fill
 
+import grpc
 
-class Client:
+import proto.matching_service_pb2 as pb2
+import proto.matching_service_pb2_grpc as pb2_grpc
+
+class Client: 
+    """ gRPC client for order submission
+    """
     def __init__(
         self,
         name: str,
@@ -45,6 +54,7 @@ class Client:
 
     def connect_to_engine(self, engine):
         self.connected_engine = engine
+        self.connected_engine_addr = "127.0.0.1:50051"
 
     def set_engine_index(self, index):
         self.engine_index = index
@@ -52,14 +62,28 @@ class Client:
     def disconnect(self):
         self.connected_engine = None
 
-    async def submit_order(self, order: Order):
+    async def submit_order(self, order: Order, stub):
         if self.connected_engine is None:
-            self.logger.error("No matching engine specified")
+            self.logger.error("No matching engine recorded")
         else:
             send_time = time.time()
+            order = self._generate_random_order()
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             self.logger.info(f"{self.name}: {order.pretty_print()}")
-            await self.connected_engine.submit_order(order)
+            
+            eastern = pytz.timezone('US/Eastern')
+            response = stub.SubmitOrder(pb2.Order(
+                order_id=order.order_id,
+                symbol=order.symbol,
+                side=order.side.name,
+                price=order.price,
+                quantity=order.quantity,
+                client_id=order.client_id,
+                timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9))
+            ))
+
+            self.logger.info(f"Received response to order {order.pretty_print()}: {response.status}")
+
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
 
@@ -69,10 +93,13 @@ class Client:
         asyncio.create_task(self.run_loop())
 
     async def run_loop(self):
-        while self.running:
-            await asyncio.sleep(random.random() * self.delay_factor)
-            order = self._generate_random_order()
-            await self.submit_order(order)
+
+        with grpc.insecure_channel(self.connected_engine_addr) as channel:
+            stub = pb2_grpc.MatchingServiceStub(channel)
+            while self.running:
+                await asyncio.sleep(random.random() * self.delay_factor)
+                order = self._generate_random_order()
+                await self.submit_order(order, stub)
 
     async def stop(self):
         self.running = False

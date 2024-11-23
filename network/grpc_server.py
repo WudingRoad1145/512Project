@@ -4,6 +4,9 @@ from proto import matching_service_pb2 as pb2
 from proto import matching_service_pb2_grpc as pb2_grpc
 from engine.match_engine import MatchEngine
 
+from typing import Dict
+import random
+
 
 class MatchingServicer(pb2_grpc.MatchingServiceServicer):
     def __init__(self, engine: MatchEngine):
@@ -39,6 +42,57 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         # TODO - rn just return empty order book
         return pb2.OrderBook(symbol=request.symbol)
 
+    async def GetFillStream(self, request, context):
+        while not (self.engine.fill_queues[request.client_id].empty()):
+            fill = self.engine.fill_queues[request.client_id].get(timeout=1)
+            yield pb2.FillResponse(
+                fill_id=fill.fill_id,
+                order_id=fill.order_id,
+                symbol=fill.symbol,
+                side=fill.side.name,
+                price=fill.price,
+                quantity=fill.quantity,
+                remaining_quantity=fill.remaining_quantity,
+                timestamp=fill.timestamp,
+                buyer_id=fill.buyer_id,
+                seller_id=fill.seller_id,
+                engine_id=fill.engine_id,
+            )
+
+class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
+    def __init__(self, matching_engine_locs : Dict[str, tuple[int, int]], name : str = "Exchange"):
+        self.name = name
+        self.matching_engine_locs = matching_engine_locs
+
+    def RegisterClient(self, request, context):
+        if (self.authenticate(request.client_id, request.client_authentication)):
+            me_addr = self.assign_client(request.client_x, request.client_y)
+            if me_addr:
+                return pb2.ClientRegistrationResponse(
+                    status="SUCCESSFUL",
+                    match_engine_address=me_addr
+                )
+            else:
+                return pb2.ClientRegistrationResponse(
+                    status="ASSIGNMENT_FAILED",
+                    match_engine_address=""
+                )
+        else:
+            return pb2.ClientRegistrationResponse(
+                status="AUTHENTICATION_FAILED",
+                match_engine_address=""
+            )
+
+    def authenticate(self, client_id : str, client_authentication : str):
+        # TODO: Add a proper authentication system (simple)
+        if (client_authentication == ""):
+            return True
+        return True
+
+    def assign_client(self, x_coord, y_coord):
+        # TODO: Assign based on closest distance
+        return random.choice(list(self.matching_engine_locs.keys()))
+
 
 async def serve(engine: MatchEngine, address: str) -> aio.Server:
     """Start gRPC server"""
@@ -55,11 +109,11 @@ async def serve(engine: MatchEngine, address: str) -> aio.Server:
 
         # Start the server
         await server.start()
-        print(f"Server started on {address}")
+        engine.logger.info(f"Server started on {address}")
 
         return server
 
     except Exception as e:
-        print(f"Error starting server: {e}")
+        engine.logger.info(f"Error starting server: {e}")
         await server.stop(0)
         raise

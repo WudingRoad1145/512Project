@@ -1,4 +1,5 @@
 import os
+import queue
 from typing import Dict, Optional
 from common.order import Order, OrderStatus
 from common.orderbook import OrderBook
@@ -10,7 +11,8 @@ class MatchEngine:
         self.engine_id = engine_id
         self.orderbooks: Dict[str, OrderBook] = {}
         self.orders: Dict[str, Order] = {}
-        self.clients = {}
+        self.clients = []
+        self.fill_queues = {}
 
         self.log_directory = os.getcwd() + "/logs/engine_logs/"
         self.logger = LogFactory(
@@ -65,8 +67,9 @@ class MatchEngine:
             pass
         return
 
-    def add_client(self, client):
-        self.clients.update({client.name: client})
+    def register_client(self, client):
+        self.clients.append(client.name)
+        self.fill_queues.update({client.name : queue.Queue()})
 
     def cancel_order(self, order_id: str) -> Optional[Order]:
         """Cancel existing order"""
