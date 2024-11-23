@@ -5,23 +5,27 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class Order(_message.Message):
-    __slots__ = ("order_id", "symbol", "side", "price", "quantity", "client_id", "timestamp")
+class OrderRequest(_message.Message):
+    __slots__ = ("order_id", "symbol", "side", "price", "quantity", "remaining_quantity", "client_id", "engine_id", "timestamp")
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_FIELD_NUMBER: _ClassVar[int]
     SIDE_FIELD_NUMBER: _ClassVar[int]
     PRICE_FIELD_NUMBER: _ClassVar[int]
     QUANTITY_FIELD_NUMBER: _ClassVar[int]
+    REMAINING_QUANTITY_FIELD_NUMBER: _ClassVar[int]
     CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     order_id: str
     symbol: str
     side: str
     price: float
-    quantity: float
+    quantity: int
+    remaining_quantity: int
     client_id: str
+    engine_id: str
     timestamp: int
-    def __init__(self, order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[float] = ..., client_id: _Optional[str] = ..., timestamp: _Optional[int] = ...) -> None: ...
+    def __init__(self, order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[int] = ..., remaining_quantity: _Optional[int] = ..., client_id: _Optional[str] = ..., engine_id: _Optional[str] = ..., timestamp: _Optional[int] = ...) -> None: ...
 
 class SubmitOrderResponse(_message.Message):
     __slots__ = ("order_id", "status", "error_message")

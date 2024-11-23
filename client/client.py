@@ -13,7 +13,7 @@ import time
 import uuid
 
 from client.custom_formatter import LogFactory
-from common.order import Order, Side, OrderStatus, Fill
+from common.order import Order, Side, OrderStatus, Fill, pretty_print_FillResponse, pretty_print_OrderRequest
 
 import grpc
 
@@ -67,17 +67,22 @@ class Client:
             self.logger.info(f"{self.name}: {order.pretty_print()}")
             
             eastern = pytz.timezone('US/Eastern')
-            response = stub.SubmitOrder(pb2.Order(
-                order_id=order.order_id,
-                symbol=order.symbol,
-                side=order.side.name,
-                price=order.price,
-                quantity=order.quantity,
-                client_id=order.client_id,
+            order_msg = pb2.OrderRequest(
+                order_id=str(order.order_id),
+                symbol=str(order.symbol),
+                side=str(order.side.name),
+                price=float(order.price),
+                quantity=int(order.quantity),
+                remaining_quantity=int(order.quantity),
+                client_id=str(order.client_id),
+                engine_id="",
                 timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9))
-            ))
+            )
+            self.logger.debug(f"Sent OrderRequest: {order_msg}")
+            response = stub.SubmitOrder(order_msg)
 
-            self.logger.info(f"Received response to order {order.pretty_print()}: {response.status}")
+            if response.status == "ERROR":
+                self.logger.info(f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}")
 
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
@@ -88,10 +93,11 @@ class Client:
             self.logger.error("No matching engine recorded")
         else:
             for fill in stub.GetFills(pb2.FillRequest(
-                client_id=self.name,
-                engine_id="Unused", # NOTE: Unused
+                client_id="Bob",
+                engine_id="ENGINE", # NOTE: Unused
                 timeout=1_000 # NOTE: Unused
             )):
+                self.logger.info(f"FILLED: {pretty_print_FillResponse(fill)}")
                 self.update_positions(fill)
 
     async def register(self):
@@ -132,6 +138,7 @@ class Client:
 
     async def stop(self):
         self.running = False
+        self.log_positions()
         # TODO: cancel all orders
 
     def update_positions(self, fill: Fill):
@@ -180,5 +187,5 @@ class Client:
             status=OrderStatus.NEW,
             timestamp=dt.now(),
             client_id=self.name,
-            engine_id="", # NOTE: Unused
+            engine_id=""
         )

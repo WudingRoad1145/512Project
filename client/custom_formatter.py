@@ -25,17 +25,20 @@ class CustomFormatter(logging.Formatter):
 
 
 class LogFactory:
-    def __init__(self, name, log_directory):
+    def __init__(self, name, log_directory, level=logging.DEBUG):
         self.name = name
         self.log_directory = log_directory
         self.log_file = log_directory + f"{name}.log"
+        self.level = level
+        # NOTE: REMOVE BELOW
+        self.level = logging.INFO
 
     def get_logger(self):
         logger = logging.getLogger(self.name)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(self.level)
 
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(self.level)
         ch.setFormatter(CustomFormatter())
         logger.addHandler(ch)
 
@@ -46,7 +49,7 @@ class LogFactory:
             file.write("")
 
         fh = logging.FileHandler(self.log_file)
-        fh.setLevel(logging.DEBUG)
+        fh.setLevel(self.level)
         fh.setFormatter(CustomFormatter())
         logger.addHandler(fh)
 

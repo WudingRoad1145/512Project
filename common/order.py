@@ -34,6 +34,11 @@ class Order:
         else:
             return f"BUY {self.quantity} {self.symbol} @{self.price}"
 
+def pretty_print_OrderRequest(order) -> str:
+    if order.side == "SELL":
+        return f"SELL {order.quantity} {order.symbol} @{order.price}"
+    else:
+        return f"BUY {order.quantity} {order.symbol} @{order.price}"
 
 @dataclass
 class Fill:
@@ -54,3 +59,10 @@ class Fill:
             return f"{self.seller_id} SOLD {self.quantity} {self.symbol} @{self.price} to {self.buyer_id}"
         else:
             return f"{self.buyer_id} BOUGHT {self.quantity} {self.symbol} @{self.price} from {self.seller_id}"
+
+
+def pretty_print_FillResponse(fill) -> str:
+    if fill.side == "SELL":
+        return f"{fill.seller_id} SOLD {fill.quantity} {fill.symbol} @{fill.price} to {fill.buyer_id}"
+    else:
+        return f"{fill.buyer_id} BOUGHT {fill.quantity} {fill.symbol} @{fill.price} from {fill.seller_id}"

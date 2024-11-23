@@ -37,7 +37,7 @@ class MatchingServiceStub(object):
         """
         self.SubmitOrder = channel.unary_unary(
                 '/matching.MatchingService/SubmitOrder',
-                request_serializer=proto_dot_matching__service__pb2.Order.SerializeToString,
+                request_serializer=proto_dot_matching__service__pb2.OrderRequest.SerializeToString,
                 response_deserializer=proto_dot_matching__service__pb2.SubmitOrderResponse.FromString,
                 _registered_method=True)
         self.CancelOrder = channel.unary_unary(
@@ -118,7 +118,7 @@ def add_MatchingServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'SubmitOrder': grpc.unary_unary_rpc_method_handler(
                     servicer.SubmitOrder,
-                    request_deserializer=proto_dot_matching__service__pb2.Order.FromString,
+                    request_deserializer=proto_dot_matching__service__pb2.OrderRequest.FromString,
                     response_serializer=proto_dot_matching__service__pb2.SubmitOrderResponse.SerializeToString,
             ),
             'CancelOrder': grpc.unary_unary_rpc_method_handler(
@@ -173,7 +173,7 @@ class MatchingService(object):
             request,
             target,
             '/matching.MatchingService/SubmitOrder',
-            proto_dot_matching__service__pb2.Order.SerializeToString,
+            proto_dot_matching__service__pb2.OrderRequest.SerializeToString,
             proto_dot_matching__service__pb2.SubmitOrderResponse.FromString,
             options,
             channel_credentials,

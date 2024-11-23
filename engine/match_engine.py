@@ -25,7 +25,6 @@ class MatchEngine:
 
     async def submit_order(self, order: Order):
         """Submit new order to matching engine"""
-        order.engine_id = self.engine_id
         self.orders[order.order_id] = order
 
         if order.symbol not in self.orderbooks:
@@ -39,33 +38,21 @@ class MatchEngine:
 
         fills = self.orderbooks[order.symbol].add_order(order)
 
+
         # NOTE: Turn on this to see order book state after each order
-        # self.logger.debug(str(self.orderbooks[order.symbol]))
+        self.logger.debug(str(self.orderbooks[order.symbol]))
+        # self.logger.debug(f"fills: {fills}")
+
+        # Add fills to queues
         if fills:
-            await self.send_fills(fills)
+            for client_id, fill in fills['incoming_fills']:
+                self.fill_queues[client_id].put(fill)
+                self.logger.debug(f"put: {fill}")
+            for client_id, fill in fills['resting_fills']:
+                self.fill_queues[client_id].put(fill)
+                self.logger.debug(f"put: {fill}")
 
         return fills
-
-    async def send_fills(self, fills):
-        incoming_fills = fills["incoming_fills"]
-        resting_fills = fills["resting_fills"]
-
-        try:
-            for client_id, fill in incoming_fills:
-                # TODO: Use gRPC here
-                await self.clients[client_id].react_to_fill(fill)
-
-            for client_id, fill in resting_fills:
-                # TODO: Use gRPC here
-                await self.clients[client_id].react_to_fill(fill)
-
-        except Exception as e:
-            print(
-                f"Exception in matching engine {self.engine_id} while sending fills: {e}"
-            )
-        finally:
-            pass
-        return
 
     def register_client(self, client_name):
         if client_name not in self.clients:

@@ -6,6 +6,7 @@ from engine.match_engine import MatchEngine
 
 from typing import Dict
 import random
+import pytz
 
 
 class MatchingServicer(pb2_grpc.MatchingServiceServicer):
@@ -44,21 +45,38 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         return pb2.OrderBook(symbol=request.symbol)
 
     async def GetFills(self, request, context):
+        self.engine.logger.debug(f"fill request: {request}")
+        eastern = pytz.timezone('US/Eastern')
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
+            self.engine.logger.debug(f"fill: {fill}")
             yield pb2.FillResponse(
-                fill_id=fill.fill_id,
-                order_id=fill.order_id,
-                symbol=fill.symbol,
-                side=fill.side.name,
-                price=fill.price,
-                quantity=fill.quantity,
-                remaining_quantity=fill.remaining_quantity,
-                timestamp=fill.timestamp,
-                buyer_id=fill.buyer_id,
-                seller_id=fill.seller_id,
-                engine_id=fill.engine_id,
+                fill_id=str(fill.fill_id),
+                order_id=str(fill.order_id),
+                symbol=str(fill.symbol),
+                side=str(fill.side),
+                price=float(fill.price),
+                quantity=int(fill.quantity),
+                remaining_quantity=int(fill.remaining_quantity),
+                timestamp=(int(fill.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
+                buyer_id=str(fill.buyer_id),
+                seller_id=(fill.seller_id),
+                engine_id=(fill.engine_id),
             )
+#            yield pb2.FillResponse(
+#                fill_id="FILL_ID",
+#                order_id="ORDER_ID",
+#                symbol="SYMBOL",
+#                side="SIDE",
+#                price=10.10,
+#                quantity=10,
+#                remaining_quantity=10,
+#                timestamp=0,
+#                buyer_id="BUYER",
+#                seller_id="SELLER",
+#                engine_id="ENGINE",
+#            )
+            self.engine.logger.debug(f"sent fill {fill}")
 
     async def RegisterClient(self, request, context):
         if (self.authenticate(request.client_id, request.client_authentication)):

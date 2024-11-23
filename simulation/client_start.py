@@ -15,7 +15,8 @@ from client.client import Client
 
 
 async def main():
-    client = Client(name="Bob", me_addr="127.0.0.1:50051")
+    symbol_list = ["AAPL"]
+    client = Client(name="Bob", me_addr="127.0.0.1:50051", symbols=symbol_list)
     await client.run()
     await asyncio.sleep(5)
     await client.stop()

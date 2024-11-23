@@ -32,7 +32,7 @@ class OrderBook:
             "incoming_fills": [],
             "resting_fills": [],
         }
-        if order.side == Side.BUY:
+        if order.side == "BUY":
             # Match against asks
             for price in sorted(self.asks.keys()):
                 if price > order.price or order.remaining_quantity <= 0:
@@ -52,7 +52,7 @@ class OrderBook:
 
         # Add remaining quantity to book
         if order.remaining_quantity > 0:
-            if order.side == Side.BUY:
+            if order.side == "BUY":
                 self.bids[order.price].append(order)
             else:
                 self.asks[order.price].append(order)
@@ -65,7 +65,7 @@ class OrderBook:
         incoming_fills = []
         resting_fills = []
 
-        if incoming_order.side == Side.BUY:
+        if incoming_order.side == "BUY":
             orders = self.asks[price]
 
             for resting_order in orders[:]:
@@ -122,7 +122,7 @@ class OrderBook:
                 if resting_order.remaining_quantity <= 0:
                     orders.remove(resting_order)
 
-        elif incoming_order.side == Side.SELL:
+        elif incoming_order.side == "SELL":
             orders = self.bids[price]
 
             for resting_order in orders[:]:
