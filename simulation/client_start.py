@@ -16,10 +16,47 @@ from client.client import Client
 
 async def main():
     symbol_list = ["AAPL"]
-    client = Client(name="Bob", me_addr="127.0.0.1:50051", symbols=symbol_list)
-    await client.run()
-    await asyncio.sleep(5)
-    await client.stop()
+    DELAY_FACTOR = 1
+    client_1 = Client(
+        name="Bob", 
+        authentication_key="password",
+        me_addr="127.0.0.1:50051", 
+        symbols=symbol_list,
+        delay_factor=DELAY_FACTOR,
+    )
+    client_2 = Client(
+        name="Adam", 
+        authentication_key="password",
+        me_addr="127.0.0.1:50051", 
+        symbols=symbol_list,
+        delay_factor=DELAY_FACTOR,
+    )
+    client_3 = Client(
+        name="Charlie", 
+        authentication_key="password",
+        me_addr="127.0.0.1:50051", 
+        symbols=symbol_list,
+        delay_factor=DELAY_FACTOR,
+    )
+    client_4 = Client(
+        name="Diana", 
+        authentication_key="password",
+        me_addr="127.0.0.1:50051", 
+        symbols=symbol_list,
+        delay_factor=DELAY_FACTOR,
+    )
+
+    await client_1.run()
+    await client_2.run()
+    await client_3.run()
+    await client_4.run()
+
+    await asyncio.sleep(10)
+
+    await client_1.stop()
+    await client_2.stop()
+    await client_3.stop()
+    await client_4.stop()
 
 
 if __name__ == "__main__":

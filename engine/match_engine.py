@@ -61,6 +61,7 @@ class MatchEngine:
             self.logger.info(f"Registered client {client_name}")
         else:
             self.logger.warning(f"Attempted duplicate registration of client {client_name}")
+            # TODO: Maybe prevent connection here?
 
     def cancel_order(self, order_id: str) -> Optional[Order]:
         """Cancel existing order"""

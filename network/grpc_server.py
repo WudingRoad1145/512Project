@@ -3,6 +3,7 @@ from grpc import aio
 from proto import matching_service_pb2 as pb2
 from proto import matching_service_pb2_grpc as pb2_grpc
 from engine.match_engine import MatchEngine
+from common.order import pretty_print_FillResponse
 
 from typing import Dict
 import random
@@ -49,7 +50,6 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         eastern = pytz.timezone('US/Eastern')
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
-            self.engine.logger.debug(f"fill: {fill}")
             yield pb2.FillResponse(
                 fill_id=str(fill.fill_id),
                 order_id=str(fill.order_id),
@@ -63,20 +63,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 seller_id=(fill.seller_id),
                 engine_id=(fill.engine_id),
             )
-#            yield pb2.FillResponse(
-#                fill_id="FILL_ID",
-#                order_id="ORDER_ID",
-#                symbol="SYMBOL",
-#                side="SIDE",
-#                price=10.10,
-#                quantity=10,
-#                remaining_quantity=10,
-#                timestamp=0,
-#                buyer_id="BUYER",
-#                seller_id="SELLER",
-#                engine_id="ENGINE",
-#            )
-            self.engine.logger.debug(f"sent fill {fill}")
+            self.engine.logger.info(f"{pretty_print_FillResponse(fill)}")
 
     async def RegisterClient(self, request, context):
         if (self.authenticate(request.client_id, request.client_authentication)):
@@ -94,9 +81,11 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
     def authenticate(self, client_id : str, client_authentication : str):
         # TODO: Add a proper authentication system (simple)
-        if (client_authentication == ""):
+        if (client_authentication == "password"):
             return True
-        return True
+        else:
+            self.engine.logger.error(f"client {client_id} failed to authenticate with password {client_authentication}")
+            return False
     
 
 class ExchangeServicer(pb2_grpc.MatchingServiceServicer):

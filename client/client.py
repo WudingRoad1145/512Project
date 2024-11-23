@@ -26,15 +26,17 @@ class Client:
     def __init__(
         self,
         name: str,
+        authentication_key: str,
         balance: int = 0,
         positions: dict = {},
         location: tuple = (0, 0),
         symbols: list = [],
-        delay_factor: int = 1,
+        delay_factor: float = 1.0,
         exchange_addr: str = "127.0.0.1:50050",
         me_addr: str = ""
     ):
         self.name = name
+        self.authentication_key = authentication_key
         self.log_directory = os.getcwd() + "/logs/client_logs/"
         self.log_file = os.getcwd() + "/logs/client_logs/" + name
         self.balance = balance
@@ -82,7 +84,7 @@ class Client:
             response = stub.SubmitOrder(order_msg)
 
             if response.status == "ERROR":
-                self.logger.info(f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}")
+                self.logger.error(f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}")
 
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
@@ -93,7 +95,7 @@ class Client:
             self.logger.error("No matching engine recorded")
         else:
             for fill in stub.GetFills(pb2.FillRequest(
-                client_id="Bob",
+                client_id=self.name,
                 engine_id="ENGINE", # NOTE: Unused
                 timeout=1_000 # NOTE: Unused
             )):
@@ -107,7 +109,7 @@ class Client:
             stub = pb2_grpc.MatchingServiceStub(channel)
             response = stub.RegisterClient(pb2.ClientRegistrationRequest(
                 client_id=self.name,
-                client_authentication="password",
+                client_authentication=self.authentication_key,
                 client_x=0,
                 client_y=0,
             ))
@@ -137,7 +139,15 @@ class Client:
                 await self.submit_order(order, stub)
 
     async def stop(self):
+        self.logger.info("Stopping run")
         self.running = False
+
+        # get final fill information
+        await asyncio.sleep(1)
+        with grpc.insecure_channel(self.me_addr) as channel:
+            stub = pb2_grpc.MatchingServiceStub(channel)
+            await self.get_fills_and_update(stub)
+
         self.log_positions()
         # TODO: cancel all orders
 
