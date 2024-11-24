@@ -17,49 +17,42 @@ from client.client import Client
 async def main():
     symbol_list = ["AAPL"]
     DELAY_FACTOR = .1
-    client_1 = Client(
-        name="Adam", 
-        authentication_key="password",
-        symbols=symbol_list,
-        delay_factor=DELAY_FACTOR,
-    )
-    client_2 = Client(
-        name="Bob", 
-        authentication_key="password",
-        symbols=symbol_list,
-        delay_factor=DELAY_FACTOR,
-    )
-    client_3 = Client(
-        name="Charlie", 
-        authentication_key="password",
-        symbols=symbol_list,
-        delay_factor=DELAY_FACTOR,
-    )
-    client_4 = Client(
-        name="Diana", 
-        authentication_key="password",
-        symbols=symbol_list,
-        delay_factor=DELAY_FACTOR,
-    )
+    SIM_DURATION = 5 # in seconds
+    EXCHANGE_ADDR = "127.0.0.1:50059"
+    client_names = [
+        "Adam",
+        "Betsy",
+        "Charlie",
+        "Diana",
+        "Eric",
+        "Fred",
+        "Geoffrey",
+        "Harry",
+        "Ian",
+    ]
+    clients = []
 
-    await client_1.run()
-    await client_2.run()
-    await client_3.run()
-    await client_4.run()
+    for client_name in client_names:
+        clients.append(Client(
+            name=client_name,
+            authentication_key="password",
+            symbols=symbol_list,
+            delay_factor=DELAY_FACTOR,
+            exchange_addr=EXCHANGE_ADDR
+        ))
 
-    await asyncio.sleep(3)
+    for client in clients:
+        await client.run()
 
-    asyncio.create_task(client_1.stop())
-    asyncio.create_task(client_2.stop())
-    asyncio.create_task(client_3.stop())
-    asyncio.create_task(client_4.stop())
+    await asyncio.sleep(SIM_DURATION)
 
-    await asyncio.sleep(1)
+    for client in clients:
+        asyncio.create_task(client.stop())
 
-    client_1.log_positions()
-    client_2.log_positions()
-    client_3.log_positions()
-    client_4.log_positions()
+    await asyncio.sleep(1) # give time to log positions
+
+    for client in clients:
+        client.log_positions() # get final positions
 
 
 

@@ -12,10 +12,10 @@ from network.grpc_server import MatchingServicer, serve_ME, serve_exchange
 from client.custom_formatter import LogFactory
 
 async def main():
-    NUM_ENGINES = 10
+    NUM_ENGINES = 1
     PASSWORD = "password"
-    # IP_ADDR = "10.194.137.206"
-    IP_ADDR = "127.0.0.1"
+    IP_ADDR = "10.194.137.206"
+    # IP_ADDR = "127.0.0.1"
     engines = []
     synchronizers = []
     servers = []
@@ -64,6 +64,7 @@ async def main():
 
 
     # Create Exchange
+    # NOTE: Exchange should only have access to the matching engine addresses and locations, and not the matching engines themselves.
     exchange = Exchange(me_data=me_data, authentication_key=PASSWORD)
     try:
         exchange_server = await serve_exchange(exchange, f"{IP_ADDR}:{base_port - 1}")

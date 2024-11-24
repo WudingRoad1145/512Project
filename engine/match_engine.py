@@ -80,3 +80,7 @@ class MatchEngine:
             order.status = OrderStatus.CANCELLED
             return order
         return None
+
+    def log_orderbooks(self):
+        for orderbook in self.orderbooks:
+            self.logger.info(orderbook)
