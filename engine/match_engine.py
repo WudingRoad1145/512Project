@@ -19,6 +19,9 @@ class MatchEngine:
             f"ME {self.engine_id}", self.log_directory
         ).get_logger()
 
+        self.num_orders = 0
+        self.num_fills = 0
+
     def create_orderbook(self, symbol: str) -> None:
         if symbol not in self.orderbooks:
             self.orderbooks[symbol] = OrderBook(symbol)
@@ -37,7 +40,7 @@ class MatchEngine:
             order.remaining_quantity = order.quantity
 
         fills = self.orderbooks[order.symbol].add_order(order)
-
+        self.num_orders += 1
 
         # NOTE: Turn on this to see order book state after each order
         self.logger.debug(str(self.orderbooks[order.symbol]))
@@ -49,10 +52,12 @@ class MatchEngine:
                 self.fill_queues[client_id].put(fill)
                 self.logger.debug(f"put to {client_id}")
                 self.logger.debug(f"put: {fill}")
+                self.num_fills += 1
             for client_id, fill in fills['resting_fills']:
                 self.fill_queues[client_id].put(fill)
                 self.logger.debug(f"put to {client_id}")
                 self.logger.debug(f"put: {fill}")
+                self.num_fills += 1
 
         return fills
 
