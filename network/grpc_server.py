@@ -46,7 +46,6 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         return pb2.OrderBook(symbol=request.symbol)
 
     async def GetFills(self, request, context):
-        self.engine.logger.debug(f"fill request: {request}")
         eastern = pytz.timezone('US/Eastern')
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
@@ -139,7 +138,8 @@ async def serve_ME(engine: MatchEngine, address: str) -> aio.Server:
         # Start the server
         await server.start()
         engine.logger.info(f"ME Server started on {address}")
-        await server.wait_for_termination()
+        # NOTE: waiting for termination moved to the exchange driver so we can have multiple servers on the same process
+        # await server.wait_for_termination()
         return server
 
     except Exception as e:

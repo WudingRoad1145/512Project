@@ -54,6 +54,10 @@ async def main():
             logger.info(f"Failed to start server {i}: {e}")
             raise
 
+    
+    for server in servers:
+        await server.wait_for_termination()
+
 if __name__ == "__main__":
     asyncio.run(main())
 

@@ -51,6 +51,8 @@ class Client:
         self.connected_to_me = False
 
         self.running = False
+        self.order_running = False
+        self.fill_running = False
 
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
@@ -59,7 +61,7 @@ class Client:
         else:
             self.symbols = symbols
 
-    async def submit_order(self, order: Order, stub):
+    async def submit_order(self, order: Order):
         if not self.connected_to_me:
             self.logger.error("No matching engine recorded")
         else:
@@ -81,7 +83,7 @@ class Client:
                 timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9))
             )
             self.logger.debug(f"Sent OrderRequest: {order_msg}")
-            response = stub.SubmitOrder(order_msg)
+            response = await self.stub.SubmitOrder(order_msg)
 
             if response.status == "ERROR":
                 self.logger.error(f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}")
@@ -89,45 +91,62 @@ class Client:
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
 
-    async def get_fills_and_update(self, stub):
+    async def get_fills_and_update(self):
         fills = []
         if not self.connected_to_me:
             self.logger.error("No matching engine recorded")
         else:
-            for fill in stub.GetFills(pb2.FillRequest(
+            fill_stream = self.stub.GetFills(pb2.FillRequest(
                 client_id=self.name,
                 engine_id="ENGINE", # NOTE: Unused
                 timeout=1_000 # NOTE: Unused
-            )):
+            ))
+
+
+            fill = await fill_stream.read()
+            while (fill):
                 self.logger.info(f"FILLED: {pretty_print_FillResponse(fill)}")
                 self.update_positions(fill)
+                fill = await fill_stream.read()
 
     async def register(self):
     # TODO: Change this to first go to the exchange layer
 
-        with grpc.insecure_channel(self.me_addr) as channel:
-            stub = pb2_grpc.MatchingServiceStub(channel)
-            response = stub.RegisterClient(pb2.ClientRegistrationRequest(
+        try:
+            self.me_channel = grpc.aio.insecure_channel(self.me_addr)
+            self.stub = pb2_grpc.MatchingServiceStub(self.me_channel)
+            response = await self.stub.RegisterClient(pb2.ClientRegistrationRequest(
                 client_id=self.name,
                 client_authentication=self.authentication_key,
                 client_x=0,
                 client_y=0,
             ))
 
-        return response
+            self.connected_to_me = True
+            return response
+        except Exception as e:
+            self.logger.error(f"registration error: {e}")
+
+        return None
+
+
+
+
+
 
 
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         self.running = True
+        self.order_running = True
+        self.fill_running = True
         registration_response = await self.register()
-
-        if ("SUCCESSFUL" in registration_response.status):
-            # TODO: Modify self.me_addr to have the address given in the response
-            self.connected_to_me = True
-            asyncio.create_task(self.run_loop())
-        else:
-            self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")
+        if (registration_response):
+            if ("SUCCESSFUL" in registration_response.status):
+                # TODO: Modify self.me_addr to have the address given in the response
+                asyncio.create_task(self.run_loop())
+            else:
+                self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")
 
     async def run_loop(self):
         with grpc.insecure_channel(self.me_addr) as channel:
@@ -135,20 +154,20 @@ class Client:
             while self.running:
                 await asyncio.sleep(random.random() * self.delay_factor)
                 order = self._generate_random_order()
-                await self.get_fills_and_update(stub)
-                await self.submit_order(order, stub)
+                if self.fill_running:
+                    await self.get_fills_and_update()
+                if self.order_running:
+                    await self.submit_order(order)
 
     async def stop(self):
         self.logger.info("Stopping run")
+        self.order_running = False
+
+        await self.get_fills_and_update()
+        self.fill_running = False
         self.running = False
 
-        # get final fill information
-        await asyncio.sleep(1)
-        with grpc.insecure_channel(self.me_addr) as channel:
-            stub = pb2_grpc.MatchingServiceStub(channel)
-            await self.get_fills_and_update(stub)
 
-        self.log_positions()
         # TODO: cancel all orders
 
     def update_positions(self, fill: Fill):

@@ -47,9 +47,11 @@ class MatchEngine:
         if fills:
             for client_id, fill in fills['incoming_fills']:
                 self.fill_queues[client_id].put(fill)
+                self.logger.debug(f"put to {client_id}")
                 self.logger.debug(f"put: {fill}")
             for client_id, fill in fills['resting_fills']:
                 self.fill_queues[client_id].put(fill)
+                self.logger.debug(f"put to {client_id}")
                 self.logger.debug(f"put: {fill}")
 
         return fills
