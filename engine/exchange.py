@@ -5,12 +5,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import asyncio
 import random
-from typing import List
+from typing import List, Dict
 
-from engine.match_engine import MatchEngine
-from engine.synchronizer import OrderBookSynchronizer
-from network.grpc_server import serve_ME
-from client.client import Client
 from client.custom_formatter import LogFactory
 
 
@@ -20,135 +16,42 @@ class Exchange:
     """
 
     def __init__(
-        self, num_engines: int = 3, base_port: int = 50051, symbols: list = []
+        self,
+        me_data: Dict[str, Dict[str, str]],
+        authentication_key: str
     ):
+        """
+        me_data looks like {me_name: {location_x : <float>, location_y: <float>, address: <string>}}
+        """
         self.name = "Exchange"
-        self.num_engines = num_engines
-        self.num_clients = 0
-        self.base_port = base_port
-        self.engines = []
-        self.synchronizers = []
-        self.servers = []
-        self.clients = []
+        self.me_data = me_data
+        self.authentication_key = authentication_key
 
         # logging
         self.log_directory = os.getcwd() + "/logs/exchange_logs/"
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
-        if not symbols:
-            self.symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
-        else:
-            self.symbols = symbols
+    def assign_client(self, client_x: float, client_y: float):
+        """ Assigns clients to matching engines.
 
-        self.address = f"127.0.0.1:{self.base_port - 1}"
+            Returns a matching engine address drawn from self.me_data,
+            based on distance
+        """
 
-    async def setup(self):
-        """Set up matching engines, synchronizers, and logging"""
+#        min_dist = (1 << 30)
+#        for name, data in self.me_data:
+#            current_distance = distance((client_x, client_y), (data["location_x"], data["location_y"]))
+#            if  current_distance < min_dist:
+#                min_dist = current_distance
 
-        # Create engines
-        for i in range(self.num_engines):
-            engine = MatchEngine(f"engine_{i}")
-            self.engines.append(engine)
+        # TODO: Make this base on distance instead of random
 
-            # Create peer address list for each engine
-            peer_addresses = [
-                f"127.0.0.1:{self.base_port + j}"
-                for j in range(self.num_engines)
-                if j != i
-            ]
+        matched_me_name = random.choice(list(self.me_data.keys()))
+        self.logger.info(f"assigned client to {matched_me_name}")
+        return self.me_data[matched_me_name]["address"]
 
-            # Create and start synchronizer
-            synchronizer = OrderBookSynchronizer(
-                engine_id=f"engine_{i}", peer_addresses=peer_addresses
-            )
-            await synchronizer.start()  # Start the synchronizer
-            self.synchronizers.append(synchronizer)
+    def authenticate(self, client_id: str, client_authentication: str):
+        # TODO: Actually check password
+        self.logger.info(f"authenticated client {client_id}")
 
-            # Start gRPC server
-            try:
-                server = await serve_ME(engine, f"127.0.0.1:{self.base_port + i}")
-                self.servers.append(server)
-                self.logger.info(f"Started server {i} on port {self.base_port + i}")
-            except Exception as e:
-                self.logger.info(f"Failed to start server {i}: {e}")
-                raise
-
-        # Wait for servers to start
-        await asyncio.sleep(2)
-
-    def add_client(self, client: Client):
-        self.num_clients += 1
-        self.clients.append(client)
-        return self._assign_client(client)
-
-    async def cleanup(self):
-        """Cleanup resources"""
-        # Stop synchronizers
-        for synchronizer in self.synchronizers:
-            await synchronizer.stop()
-
-        # Stop servers
-        for server in self.servers:
-            await server.stop(grace=None)
-        # Disconnect clients
-
-        for client in self.clients:
-            client.disconnect()
-
-        await self._print_order_books(self.symbols, num_levels=5)
-
-    async def _print_order_books(self, symbols: List[str], num_levels: int = 1_000):
-        """Print final state of all order books"""
-        for symbol in symbols:
-            self.logger.info(f"Order book for {symbol}: (depth {num_levels})")
-            for engine in self.engines:
-                if symbol in engine.orderbooks:
-                    book = engine.orderbooks[symbol]
-                    self.logger.info(f"Engine {engine.engine_id}:")
-                    ask_str = ""
-
-                    num_ask_levels = 1
-                    for price in sorted(book.asks.keys()):
-                        if not (
-                            sum(o.remaining_quantity for o in book.asks[price]) == 0
-                            or num_ask_levels > num_levels
-                        ):
-                            ask_str = (
-                                f"\n\t{price}: {sum(o.remaining_quantity for o in book.asks[price])}"
-                            ) + ask_str
-                            num_ask_levels += 1
-                    self.logger.info("\nAsks: \n" + ask_str)
-
-                    bid_str = ""
-                    num_bid_levels = 1
-                    for price in sorted(book.bids.keys(), reverse=True):
-                        if not (
-                            sum(o.remaining_quantity for o in book.bids[price]) == 0
-                            or num_bid_levels > num_levels
-                        ):
-                            bid_str += f"\n\t{price}: {sum(o.remaining_quantity for o in book.bids[price])}"
-                            num_bid_levels += 1
-
-                    self.logger.info("\nBids: \n" + bid_str)
-
-    def _assign_client(self, client):
-        if not self.engines:
-            return None
-
-        # assign clients randomly
-
-        index = random.randint(0, len(self.engines) - 1)
-
-        # add engine to the client
-        client.connect_to_engine(self.engines[index])
-        client.set_engine_index(index)
-
-        # add client to the engine
-        self.engines[index].add_client(client)
-
-        me_address = f"127.0.0.1:{self.base_port + index}"
-        self.logger.info(
-            f"assigned {client.name} to ME {index} at address {me_address}"
-        )
-
-        return (index, me_address)
+        return True

@@ -33,7 +33,8 @@ class Client:
         symbols: list = [],
         delay_factor: float = 1.0,
         exchange_addr: str = "127.0.0.1:50050",
-        me_addr: str = ""
+        me_addr: str = "",
+        direct_connect: bool = False
     ):
         self.name = name
         self.authentication_key = authentication_key
@@ -49,6 +50,7 @@ class Client:
         self.exchange_addr = exchange_addr
         self.me_addr = me_addr
         self.connected_to_me = False
+        self.direct_connect = direct_connect
 
         self.running = False
         self.order_running = False
@@ -110,7 +112,24 @@ class Client:
                 fill = await fill_stream.read()
 
     async def register(self):
-    # TODO: Change this to first go to the exchange layer
+        if not self.direct_connect:
+            try:
+                self.exchange_channel = grpc.aio.insecure_channel(self.exchange_addr)
+                self.connected_to_exchange = True
+                self.logger.info(f"connected to exchange at address {self.exchange_addr}")
+
+                self.exchange_stub = pb2_grpc.MatchingServiceStub(self.exchange_channel)
+                response = await self.exchange_stub.RegisterClient(pb2.ClientRegistrationRequest(
+                    client_id=self.name,
+                    client_authentication=self.authentication_key,
+                    client_x=0,
+                    client_y=0,
+                ))
+                self.logger.info(f"Received registration response from exchange: {response}")
+                self.me_addr = response.match_engine_address
+            except Exception as e:
+                self.logger.error(f"exchange registration error: {e}")
+
 
         try:
             self.me_channel = grpc.aio.insecure_channel(self.me_addr)
@@ -125,7 +144,7 @@ class Client:
             self.connected_to_me = True
             return response
         except Exception as e:
-            self.logger.error(f"registration error: {e}")
+            self.logger.error(f"match engine registration error: {e}")
 
         return None
 

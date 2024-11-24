@@ -20,28 +20,24 @@ async def main():
     client_1 = Client(
         name="Adam", 
         authentication_key="password",
-        me_addr="127.0.0.1:50051", 
         symbols=symbol_list,
         delay_factor=DELAY_FACTOR,
     )
     client_2 = Client(
         name="Bob", 
         authentication_key="password",
-        me_addr="127.0.0.1:50051", 
         symbols=symbol_list,
         delay_factor=DELAY_FACTOR,
     )
     client_3 = Client(
         name="Charlie", 
         authentication_key="password",
-        me_addr="127.0.0.1:50052", 
         symbols=symbol_list,
         delay_factor=DELAY_FACTOR,
     )
     client_4 = Client(
         name="Diana", 
         authentication_key="password",
-        me_addr="127.0.0.1:50052", 
         symbols=symbol_list,
         delay_factor=DELAY_FACTOR,
     )

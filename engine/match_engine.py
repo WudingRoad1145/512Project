@@ -7,7 +7,7 @@ from client.custom_formatter import LogFactory
 
 
 class MatchEngine:
-    def __init__(self, engine_id: str):
+    def __init__(self, engine_id: str, authentication_key: str = "password"):
         self.engine_id = engine_id
         self.orderbooks: Dict[str, OrderBook] = {}
         self.orders: Dict[str, Order] = {}
@@ -21,6 +21,7 @@ class MatchEngine:
 
         self.num_orders = 0
         self.num_fills = 0
+        self.authentication_key = authentication_key
 
     def create_orderbook(self, symbol: str) -> None:
         if symbol not in self.orderbooks:
@@ -44,7 +45,6 @@ class MatchEngine:
 
         # NOTE: Turn on this to see order book state after each order
         self.logger.debug(str(self.orderbooks[order.symbol]))
-        # self.logger.debug(f"fills: {fills}")
 
         # Add fills to queues
         if fills:
