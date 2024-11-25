@@ -23,8 +23,9 @@ from common.orderbook import OrderBook
 from client.custom_formatter import LogFactory
 
 class OrderBookSynchronizer:
-    def __init__(self, engine_id: str, peer_addresses: List[str]):
+    def __init__(self, engine_id: str, engine_addr: str, peer_addresses: List[str]):
         self.engine_id = engine_id
+        self.engine_addr = engine_addr
         self.peer_addresses = peer_addresses
         self.sequence_number = 0
         self.update_queue = asyncio.Queue()
@@ -36,7 +37,8 @@ class OrderBookSynchronizer:
 
         self.log_directory = os.getcwd() + "/logs/synchronizer_logs/"
         self.logger = LogFactory(
-            f"Synchronizer-ME {self.engine_id}", self.log_directory
+            name=f"Synchronizer-ME {self.engine_id}", 
+            log_directory=self.log_directory
         ).get_logger()
 
 
@@ -209,7 +211,7 @@ class OrderBookSynchronizer:
     def lookup_bbo_engine(self, symbol, side):
         """ Returns the address of the engine with the best bid/ask for a symbol"""
 
-        ...
+        return self.engine_addr
 
 
 

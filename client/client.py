@@ -71,6 +71,7 @@ class Client:
             order = self._generate_random_order()
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             self.logger.info(f"{self.name}: {order.pretty_print()}")
+            self.logger.debug(f"full order: {order}")
             
             eastern = pytz.timezone('US/Eastern')
             order_msg = pb2.OrderRequest(

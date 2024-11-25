@@ -16,19 +16,19 @@ from client.client import Client
 
 async def main():
     symbol_list = ["AAPL"]
-    DELAY_FACTOR = .1
-    SIM_DURATION = 5 # in seconds
-    EXCHANGE_ADDR = "127.0.0.1:50059"
+    DELAY_FACTOR = .4
+    SIM_DURATION = 2 # in seconds
+    EXCHANGE_ADDR = "127.0.0.1:50050"
     client_names = [
         "Adam",
         "Betsy",
         "Charlie",
-        "Diana",
-        "Eric",
-        "Fred",
-        "Geoffrey",
-        "Harry",
-        "Ian",
+#        "Diana",
+#        "Eric",
+#        "Fred",
+#        "Geoffrey",
+#        "Harry",
+#        "Ian",
     ]
     clients = []
 

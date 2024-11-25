@@ -20,9 +20,11 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
     async def SubmitOrder(self, request, context):
         try:
-            order = await self.engine.submit_order(request)
+            self.engine.logger.debug(f"request: {request}")
+            await self.engine.submit_order(request)
             return pb2.SubmitOrderResponse(order_id=request.order_id, status="SUCCESS")
         except Exception as e:
+            self.engine.logger.error(f"malformed order request {request} \n\n Error message: {e}")
             return pb2.SubmitOrderResponse(
                 order_id=request.order_id, status="ERROR", error_message=str(e)
             )

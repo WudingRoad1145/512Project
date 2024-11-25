@@ -39,8 +39,10 @@ class MatchEngine:
     async def submit_order(self, order):
         """Submit new order to matching engine"""
 
+        self.logger.debug(f"received order: {order}")
+
         # First check if the best price for this symbol is on another engine
-        best_me_addr = self.synchronizer.lookup_bbo_engine(order.symbol, order.side.name)
+        best_me_addr = self.synchronizer.lookup_bbo_engine(order.symbol, order.side)
         if best_me_addr != self.address and order.engine_origin_addr == self.address:
 
             # route the order at most once

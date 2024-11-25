@@ -14,8 +14,8 @@ from client.custom_formatter import LogFactory
 async def main():
     NUM_ENGINES = 1
     PASSWORD = "password"
-    IP_ADDR = "10.194.137.206"
-    # IP_ADDR = "127.0.0.1"
+    # IP_ADDR = "10.194.137.206"
+    IP_ADDR = "127.0.0.1"
     engines = []
     synchronizers = []
     servers = []
@@ -28,24 +28,27 @@ async def main():
     # Record matching engine data so the exchange layer can map clients to matching engines
     me_data = {}
 
-    # Create engines
+    # Create engines and corresponding synchronizers 
     for i in range(NUM_ENGINES):
-        engine = MatchEngine(engine_id=f"engine_{i}", authentication_key=PASSWORD)
-        engines.append(engine)
-
-        # Create peer address list for each engine
         peer_addresses = [
             f"{IP_ADDR}:{base_port + j}"
             for j in range(NUM_ENGINES)
             if j != i
         ]
-
-        # Create and start synchronizer
         synchronizer = OrderBookSynchronizer(
-            engine_id=f"engine_{i}", peer_addresses=peer_addresses
+            engine_id=f"engine_{i}", 
+            engine_addr=f"{IP_ADDR}:{base_port + i}", 
+            peer_addresses=peer_addresses
         )
-        await synchronizer.start()  # Start the synchronizer
-        synchronizers.append(synchronizer)
+        engine = MatchEngine(
+            engine_id=f"engine_{i}", 
+            engine_addr=f"{IP_ADDR}:{base_port + i}", 
+            synchronizer=synchronizer, 
+            authentication_key=PASSWORD
+        )
+        engines.append(engine)
+
+        # TODO: Start synchronizers here if necessary 
 
         # Start gRPC server
         try:
@@ -60,8 +63,6 @@ async def main():
         except Exception as e:
             logger.error(f"Failed to start server {i}: {e}")
             raise
-
-
 
     # Create Exchange
     # NOTE: Exchange should only have access to the matching engine addresses and locations, and not the matching engines themselves.

@@ -31,7 +31,7 @@ class LogFactory:
         self.log_file = log_directory + f"{name}.log"
         self.level = level
         # NOTE: REMOVE BELOW
-        self.level = logging.INFO
+        self.level = logging.DEBUG
 
     def get_logger(self):
         logger = logging.getLogger(self.name)
