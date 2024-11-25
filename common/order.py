@@ -26,7 +26,7 @@ class Order:
     status: OrderStatus
     timestamp: datetime
     client_id: str
-    engine_id: str
+    engine_origin_addr: str
 
     def pretty_print(self) -> str:
         if self.side == Side.SELL:

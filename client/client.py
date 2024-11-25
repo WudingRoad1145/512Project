@@ -81,7 +81,7 @@ class Client:
                 quantity=int(order.quantity),
                 remaining_quantity=int(order.quantity),
                 client_id=str(order.client_id),
-                engine_id="",
+                engine_origin_addr=str(self.me_addr),
                 timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9))
             )
             self.logger.debug(f"Sent OrderRequest: {order_msg}")
@@ -235,5 +235,5 @@ class Client:
             status=OrderStatus.NEW,
             timestamp=dt.now(),
             client_id=self.name,
-            engine_id=""
+            engine_origin_addr=self.me_addr
         )

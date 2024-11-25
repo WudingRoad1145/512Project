@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cproto/matching_service.proto\x12\x08matching\"\xb4\x01\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06symbol\x18\x02 \x01(\t\x12\x0c\n\x04side\x18\x03 \x01(\t\x12\r\n\x05price\x18\x04 \x01(\x01\x12\x10\n\x08quantity\x18\x05 \x01(\x03\x12\x1a\n\x12remaining_quantity\x18\x06 \x01(\x03\x12\x11\n\tclient_id\x18\x07 \x01(\t\x12\x11\n\tengine_id\x18\x08 \x01(\t\x12\x11\n\ttimestamp\x18\t \x01(\x03\"N\n\x13SubmitOrderResponse\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t\"D\n\x0b\x46illRequest\x12\x11\n\tclient_id\x18\x01 \x01(\t\x12\x11\n\tengine_id\x18\x02 \x01(\t\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\"\xd7\x01\n\x0c\x46illResponse\x12\x0f\n\x07\x66ill_id\x18\x01 \x01(\t\x12\x10\n\x08order_id\x18\x02 \x01(\t\x12\x0e\n\x06symbol\x18\x03 \x01(\t\x12\x0c\n\x04side\x18\x04 \x01(\t\x12\r\n\x05price\x18\x05 \x01(\x01\x12\x10\n\x08quantity\x18\x06 \x01(\x01\x12\x1a\n\x12remaining_quantity\x18\x07 \x01(\x01\x12\x11\n\ttimestamp\x18\x08 \x01(\x03\x12\x10\n\x08\x62uyer_id\x18\t \x01(\t\x12\x11\n\tseller_id\x18\n \x01(\t\x12\x11\n\tengine_id\x18\x0b \x01(\t\"9\n\x12\x43\x61ncelOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\"N\n\x13\x43\x61ncelOrderResponse\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t\"0\n\x0bSyncRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x11\n\tengine_id\x18\x02 \x01(\t\"\x95\x01\n\x0fOrderBookUpdate\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x04\x62ids\x18\x02 \x03(\x0b\x32\x14.matching.PriceLevel\x12\"\n\x04\x61sks\x18\x03 \x03(\x0b\x32\x14.matching.PriceLevel\x12\x17\n\x0fsequence_number\x18\x04 \x01(\x03\x12\x11\n\tengine_id\x18\x05 \x01(\t\"B\n\nPriceLevel\x12\r\n\x05price\x18\x01 \x01(\x01\x12\x10\n\x08quantity\x18\x02 \x01(\x01\x12\x13\n\x0border_count\x18\x03 \x01(\x05\"%\n\x13GetOrderBookRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\"v\n\tOrderBook\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x04\x62ids\x18\x02 \x03(\x0b\x32\x14.matching.PriceLevel\x12\"\n\x04\x61sks\x18\x03 \x03(\x0b\x32\x14.matching.PriceLevel\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\"q\n\x19\x43lientRegistrationRequest\x12\x11\n\tclient_id\x18\x01 \x01(\t\x12\x1d\n\x15\x63lient_authentication\x18\x02 \x01(\t\x12\x10\n\x08\x63lient_x\x18\x03 \x01(\x03\x12\x10\n\x08\x63lient_y\x18\x04 \x01(\x03\"J\n\x1a\x43lientRegistrationResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1c\n\x14match_engine_address\x18\x02 \x01(\t2\xd2\x03\n\x0fMatchingService\x12\x46\n\x0bSubmitOrder\x12\x16.matching.OrderRequest\x1a\x1d.matching.SubmitOrderResponse\"\x00\x12L\n\x0b\x43\x61ncelOrder\x12\x1c.matching.CancelOrderRequest\x1a\x1d.matching.CancelOrderResponse\"\x00\x12\x45\n\rSyncOrderBook\x12\x15.matching.SyncRequest\x1a\x19.matching.OrderBookUpdate\"\x00\x30\x01\x12\x44\n\x0cGetOrderBook\x12\x1d.matching.GetOrderBookRequest\x1a\x13.matching.OrderBook\"\x00\x12=\n\x08GetFills\x12\x15.matching.FillRequest\x1a\x16.matching.FillResponse\"\x00\x30\x01\x12]\n\x0eRegisterClient\x12#.matching.ClientRegistrationRequest\x1a$.matching.ClientRegistrationResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1cproto/matching_service.proto\x12\x08matching\"\xbd\x01\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06symbol\x18\x02 \x01(\t\x12\x0c\n\x04side\x18\x03 \x01(\t\x12\r\n\x05price\x18\x04 \x01(\x01\x12\x10\n\x08quantity\x18\x05 \x01(\x03\x12\x1a\n\x12remaining_quantity\x18\x06 \x01(\x03\x12\x11\n\tclient_id\x18\x07 \x01(\t\x12\x1a\n\x12\x65ngine_origin_addr\x18\x08 \x01(\t\x12\x11\n\ttimestamp\x18\t \x01(\x03\"N\n\x13SubmitOrderResponse\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t\"D\n\x0b\x46illRequest\x12\x11\n\tclient_id\x18\x01 \x01(\t\x12\x11\n\tengine_id\x18\x02 \x01(\t\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\"\xcf\x01\n\x04\x46ill\x12\x0f\n\x07\x66ill_id\x18\x01 \x01(\t\x12\x10\n\x08order_id\x18\x02 \x01(\t\x12\x0e\n\x06symbol\x18\x03 \x01(\t\x12\x0c\n\x04side\x18\x04 \x01(\t\x12\r\n\x05price\x18\x05 \x01(\x01\x12\x10\n\x08quantity\x18\x06 \x01(\x03\x12\x1a\n\x12remaining_quantity\x18\x07 \x01(\x03\x12\x11\n\ttimestamp\x18\x08 \x01(\x03\x12\x10\n\x08\x62uyer_id\x18\t \x01(\t\x12\x11\n\tseller_id\x18\n \x01(\t\x12\x11\n\tengine_id\x18\x0b \x01(\t\"A\n\x0ePutFillRequest\x12\x11\n\tclient_id\x18\x01 \x01(\t\x12\x1c\n\x04\x66ill\x18\x02 \x01(\x0b\x32\x0e.matching.Fill\"!\n\x0fPutFillResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\"9\n\x12\x43\x61ncelOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\"N\n\x13\x43\x61ncelOrderResponse\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x15\n\rerror_message\x18\x03 \x01(\t\"B\n\nPriceLevel\x12\r\n\x05price\x18\x01 \x01(\x01\x12\x10\n\x08quantity\x18\x02 \x01(\x03\x12\x13\n\x0border_count\x18\x03 \x01(\x05\"D\n\x0bSyncRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x11\n\tengine_id\x18\x02 \x01(\t\x12\x12\n\nnum_levels\x18\x03 \x01(\x03\"\x92\x01\n\x0cSyncResponse\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x04\x62ids\x18\x02 \x03(\x0b\x32\x14.matching.PriceLevel\x12\"\n\x04\x61sks\x18\x03 \x03(\x0b\x32\x14.matching.PriceLevel\x12\x17\n\x0fsequence_number\x18\x04 \x01(\x03\x12\x11\n\tengine_id\x18\x05 \x01(\t\"\xbf\x01\n\x19\x42roadcastOrderbookRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x1d\n\x15originating_engine_id\x18\x02 \x01(\t\x12\x12\n\nnum_levels\x18\x03 \x01(\x03\x12\"\n\x04\x62ids\x18\x04 \x03(\x0b\x32\x14.matching.PriceLevel\x12\"\n\x04\x61sks\x18\x05 \x03(\x0b\x32\x14.matching.PriceLevel\x12\x17\n\x0fsequence_number\x18\x06 \x01(\x03\"Y\n\x1a\x42roadcastOrderbookResponse\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\x1b\n\x13receiving_engine_id\x18\x02 \x01(\t\x12\x0e\n\x06status\x18\x03 \x01(\t\"%\n\x13GetOrderbookRequest\x12\x0e\n\x06symbol\x18\x01 \x01(\t\"\x81\x01\n\x14GetOrderbookResponse\x12\x0e\n\x06symbol\x18\x01 \x01(\t\x12\"\n\x04\x62ids\x18\x02 \x03(\x0b\x32\x14.matching.PriceLevel\x12\"\n\x04\x61sks\x18\x03 \x03(\x0b\x32\x14.matching.PriceLevel\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\"q\n\x19\x43lientRegistrationRequest\x12\x11\n\tclient_id\x18\x01 \x01(\t\x12\x1d\n\x15\x63lient_authentication\x18\x02 \x01(\t\x12\x10\n\x08\x63lient_x\x18\x03 \x01(\x03\x12\x10\n\x08\x63lient_y\x18\x04 \x01(\x03\"J\n\x1a\x43lientRegistrationResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x1c\n\x14match_engine_address\x18\x02 \x01(\t2\xf5\x04\n\x0fMatchingService\x12\x46\n\x0bSubmitOrder\x12\x16.matching.OrderRequest\x1a\x1d.matching.SubmitOrderResponse\"\x00\x12L\n\x0b\x43\x61ncelOrder\x12\x1c.matching.CancelOrderRequest\x1a\x1d.matching.CancelOrderResponse\"\x00\x12@\n\rSyncOrderBook\x12\x15.matching.SyncRequest\x1a\x16.matching.SyncResponse\"\x00\x12\x61\n\x12\x42roadcastOrderbook\x12#.matching.BroadcastOrderbookRequest\x1a$.matching.BroadcastOrderbookResponse\"\x00\x12O\n\x0cGetOrderBook\x12\x1d.matching.GetOrderbookRequest\x1a\x1e.matching.GetOrderbookResponse\"\x00\x12\x35\n\x08GetFills\x12\x15.matching.FillRequest\x1a\x0e.matching.Fill\"\x00\x30\x01\x12@\n\x07PutFill\x12\x18.matching.PutFillRequest\x1a\x19.matching.PutFillResponse\"\x00\x12]\n\x0eRegisterClient\x12#.matching.ClientRegistrationRequest\x1a$.matching.ClientRegistrationResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,31 +32,39 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.matching_service_pb2'
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_ORDERREQUEST']._serialized_start=43
-  _globals['_ORDERREQUEST']._serialized_end=223
-  _globals['_SUBMITORDERRESPONSE']._serialized_start=225
-  _globals['_SUBMITORDERRESPONSE']._serialized_end=303
-  _globals['_FILLREQUEST']._serialized_start=305
-  _globals['_FILLREQUEST']._serialized_end=373
-  _globals['_FILLRESPONSE']._serialized_start=376
-  _globals['_FILLRESPONSE']._serialized_end=591
-  _globals['_CANCELORDERREQUEST']._serialized_start=593
-  _globals['_CANCELORDERREQUEST']._serialized_end=650
-  _globals['_CANCELORDERRESPONSE']._serialized_start=652
-  _globals['_CANCELORDERRESPONSE']._serialized_end=730
-  _globals['_SYNCREQUEST']._serialized_start=732
-  _globals['_SYNCREQUEST']._serialized_end=780
-  _globals['_ORDERBOOKUPDATE']._serialized_start=783
-  _globals['_ORDERBOOKUPDATE']._serialized_end=932
-  _globals['_PRICELEVEL']._serialized_start=934
-  _globals['_PRICELEVEL']._serialized_end=1000
-  _globals['_GETORDERBOOKREQUEST']._serialized_start=1002
-  _globals['_GETORDERBOOKREQUEST']._serialized_end=1039
-  _globals['_ORDERBOOK']._serialized_start=1041
-  _globals['_ORDERBOOK']._serialized_end=1159
-  _globals['_CLIENTREGISTRATIONREQUEST']._serialized_start=1161
-  _globals['_CLIENTREGISTRATIONREQUEST']._serialized_end=1274
-  _globals['_CLIENTREGISTRATIONRESPONSE']._serialized_start=1276
-  _globals['_CLIENTREGISTRATIONRESPONSE']._serialized_end=1350
-  _globals['_MATCHINGSERVICE']._serialized_start=1353
-  _globals['_MATCHINGSERVICE']._serialized_end=1819
+  _globals['_ORDERREQUEST']._serialized_end=232
+  _globals['_SUBMITORDERRESPONSE']._serialized_start=234
+  _globals['_SUBMITORDERRESPONSE']._serialized_end=312
+  _globals['_FILLREQUEST']._serialized_start=314
+  _globals['_FILLREQUEST']._serialized_end=382
+  _globals['_FILL']._serialized_start=385
+  _globals['_FILL']._serialized_end=592
+  _globals['_PUTFILLREQUEST']._serialized_start=594
+  _globals['_PUTFILLREQUEST']._serialized_end=659
+  _globals['_PUTFILLRESPONSE']._serialized_start=661
+  _globals['_PUTFILLRESPONSE']._serialized_end=694
+  _globals['_CANCELORDERREQUEST']._serialized_start=696
+  _globals['_CANCELORDERREQUEST']._serialized_end=753
+  _globals['_CANCELORDERRESPONSE']._serialized_start=755
+  _globals['_CANCELORDERRESPONSE']._serialized_end=833
+  _globals['_PRICELEVEL']._serialized_start=835
+  _globals['_PRICELEVEL']._serialized_end=901
+  _globals['_SYNCREQUEST']._serialized_start=903
+  _globals['_SYNCREQUEST']._serialized_end=971
+  _globals['_SYNCRESPONSE']._serialized_start=974
+  _globals['_SYNCRESPONSE']._serialized_end=1120
+  _globals['_BROADCASTORDERBOOKREQUEST']._serialized_start=1123
+  _globals['_BROADCASTORDERBOOKREQUEST']._serialized_end=1314
+  _globals['_BROADCASTORDERBOOKRESPONSE']._serialized_start=1316
+  _globals['_BROADCASTORDERBOOKRESPONSE']._serialized_end=1405
+  _globals['_GETORDERBOOKREQUEST']._serialized_start=1407
+  _globals['_GETORDERBOOKREQUEST']._serialized_end=1444
+  _globals['_GETORDERBOOKRESPONSE']._serialized_start=1447
+  _globals['_GETORDERBOOKRESPONSE']._serialized_end=1576
+  _globals['_CLIENTREGISTRATIONREQUEST']._serialized_start=1578
+  _globals['_CLIENTREGISTRATIONREQUEST']._serialized_end=1691
+  _globals['_CLIENTREGISTRATIONRESPONSE']._serialized_start=1693
+  _globals['_CLIENTREGISTRATIONRESPONSE']._serialized_end=1767
+  _globals['_MATCHINGSERVICE']._serialized_start=1770
+  _globals['_MATCHINGSERVICE']._serialized_end=2399
 # @@protoc_insertion_point(module_scope)

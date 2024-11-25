@@ -1,9 +1,11 @@
 from grpc import aio
+import asyncio
 
 from proto import matching_service_pb2 as pb2
 from proto import matching_service_pb2_grpc as pb2_grpc
 from engine.match_engine import MatchEngine
 from engine.exchange import Exchange
+from engine.synchronizer import OrderBookSynchronizer
 from common.order import pretty_print_FillResponse
 
 from typing import Dict
@@ -37,20 +39,88 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
             )
 
     async def SyncOrderBook(self, request, context):
-        # TODO - rn just return empty update
-        return pb2.OrderBookUpdate(
-            symbol=request.symbol, engine_id=self.engine.engine_id
+        """
+        Synchronize order book by providing the current state of the symbol's bids and asks.
+        """
+
+        # Ensure the requested symbol exists in the local engine
+        if request.symbol not in self.engine.orderbooks:
+            self.synchronizer.logger.warning(f"Symbol {request.symbol} not found in local order books.")
+            return pb2.SyncResponse(
+                symbol=request.symbol,
+                bids=[],  # Empty bids
+                asks=[],   # Empty asks
+                engine_id=self.engine.engine_id,
+            )
+
+        # Retrieve the local order book for the symbol
+        orderbook = self.engine.orderbooks[request.symbol]
+
+        # Construct the response with bids and asks
+        response = pb2.SyncResponse(
+            symbol=request.symbol,
+            bids=[
+                pb2.PriceLevel(
+                    price=price,
+                    quantity=int(sum(o.remaining_quantity for o in orders)),
+                    order_count=len(orders)
+                )
+                for price, orders in orderbook.bids.items()
+            ],
+            asks=[
+                pb2.PriceLevel(
+                    price=price,
+                    quantity=int(sum(o.remaining_quantity for o in orders)),
+                    order_count=len(orders)
+                )
+                for price, orders in orderbook.asks.items()
+            ],
+            engine_id=self.engine.engine_id,
         )
 
+        self.engine.synchronizer.logger.info(f"ME {request.engine_id} synced {request.symbol} with {response.engine_id}")
+
+        return response
+
+    async def BroadcastOrderbook(self, request, context):
+        response = await self.engine.synchronizer.process_peer_update(request)
+        return response
+
     async def GetOrderBook(self, request, context):
-        # TODO - rn just return empty order book
-        return pb2.OrderBook(symbol=request.symbol)
+        symbol = request.symbol
+        if symbol in self.engine.orderbooks:
+            orderbook = self.engine.orderbooks[symbol]
+            self.engine.logger.debug(f"processing GetOrderBook for {symbol} \n orderbook: \n {str(orderbook)}")
+            response = pb2.GetOrderbookResponse(
+                symbol=symbol,
+                bids=[
+                    pb2.PriceLevel(
+                        price=price, 
+                        quantity=int(sum(o.remaining_quantity for o in orders)), 
+                        order_count=len(orders)
+                    )
+                    for price, orders in orderbook.bids.items()
+                ],
+                asks=[
+                    pb2.PriceLevel(
+                        price=price, 
+                        quantity=int(sum(o.remaining_quantity for o in orders)), 
+                        order_count=len(orders)
+                    )
+                    for price, orders in orderbook.asks.items()
+                ]
+            )
+        else:
+            self.engine.logger.warning(f"{symbol} not found in orderbooks")
+            response = pb2.GetOrderbookResponse() # empty response
+
+        return response
 
     async def GetFills(self, request, context):
         eastern = pytz.timezone('US/Eastern')
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
-            yield pb2.FillResponse(
+            yield pb2.Fill(
                 fill_id=str(fill.fill_id),
                 order_id=str(fill.order_id),
                 symbol=str(fill.symbol),
@@ -65,8 +135,23 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
             )
             self.engine.logger.info(f"{pretty_print_FillResponse(fill)}")
 
+    async def PutFill(self, request, context):
+        try:
+            async with asyncio.Lock():
+                self.engine.fill_queues[request.client_id].put(request.fill)
+
+            return pb2.PutFillResponse(
+                status = "ACCEPTED"
+            )
+
+        except Exception as e:
+            return pb2.PutFillResponse(
+                status = f"FAILED: {e}"
+            )
+
+
     async def RegisterClient(self, request, context):
-        if (self.authenticate(request.client_id, request.client_authentication)):
+        if (self.engine.authenticate(request.client_id, request.client_authentication)):
             self.clients.append(request.client_id)
             self.engine.register_client(request.client_id)
             return pb2.ClientRegistrationResponse(
@@ -79,13 +164,6 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 match_engine_address=""
             )
 
-    def authenticate(self, client_id : str, client_authentication : str):
-        # TODO: Add a proper authentication system (simple)
-        if (client_authentication == self.engine.authentication_key):
-            return True
-        else:
-            self.engine.logger.error(f"client {client_id} failed to authenticate with password {client_authentication}")
-            return False
     
 
 class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
