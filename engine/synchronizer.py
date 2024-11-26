@@ -237,8 +237,3 @@ class OrderBookSynchronizer:
         # return self.engine_addr
         return "127.0.0.1:50052"
 
-
-
-
-
-

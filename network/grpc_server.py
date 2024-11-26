@@ -167,7 +167,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 engine_destination_addr = request.fill.engine_destination_addr,
             )
 
-            self.logger.debug(f"putting routed fill: {fill_obj} to {request.client_id}")
+            self.logger.info(f"routing fill: {pretty_print_FillResponse(request.fill)} to {request.fill.engine_destination_addr}")
             self.engine.fill_queues[request.client_id].put(fill_obj)
             self.logger.debug(f"[PUT] size of {request.client_id} queue: {len(self.engine.fill_queues[request.client_id].queue)}")
             self.logger.debug(f"[PUT] state of {request.client_id} queue: {self.engine.fill_queues[request.client_id].queue}")
