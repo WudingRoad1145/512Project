@@ -14,7 +14,7 @@ class CancelFairy:
     def __init__(self, engine_id, engine_addr, peer_addresses):
         self.engine_id = engine_id
         self.engine_addr = engine_addr
-        self.peer_addresses = []
+        self.peer_addresses = peer_addresses
         # for cancellation
         self.active_orders = {} # order_id : {remaining_quantity : <int>, address: <str>, order_record : <Order>}
         self.log_directory = os.getcwd() + "/logs/cancelfairy_logs/"

@@ -235,5 +235,5 @@ class OrderBookSynchronizer:
         """ Returns the address of the engine with the best bid/ask for a symbol"""
 
         # return self.engine_addr
-        return "127.0.0.1:50051"
+        return "127.0.0.1:50052"
 
