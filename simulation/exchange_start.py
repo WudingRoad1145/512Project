@@ -15,7 +15,7 @@ from client.custom_formatter import LogFactory
 
 
 async def main():
-    NUM_ENGINES = 5
+    NUM_ENGINES = 1
     PASSWORD = "password"
     # IP_ADDR = "10.194.137.206"
     IP_ADDR = "127.0.0.1"

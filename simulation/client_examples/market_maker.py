@@ -1,4 +1,5 @@
 import random
+import uuid
 import asyncio
 import os
 import sys
@@ -6,10 +7,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.getcwd())
 
 from client.client import Client
-from common.order import Fill
+from common.order import Fill, Order, Side, OrderStatus
 from typing import List
+from datetime import datetime as dt
 
-class RandomClient(Client):
+class MarketMaker(Client):
     def __init__(self, name: str):
         super().__init__(
             name=name,
@@ -19,16 +21,18 @@ class RandomClient(Client):
             exchange_addr="127.0.0.1:50050",
         )
 
+
     async def run_loop(self):
         while self.running:
-            self.log_positions(priority="DEBUG")
             await asyncio.sleep(random.random() * self.delay_factor)
-            order = await self.generate_order()
+            self.log_positions(priority="DEBUG")
+            order_list = await self.generate_order()
             if self.fill_running:
                 fills = await self.get_fills()
                 await self.process_fills(fills)
             if self.order_running:
-                await self.submit_order(order)
+                for order in order_list:
+                    await self.submit_order(order)
 
     async def stop(self):
         self.logger.info("Stopping run")
@@ -37,15 +41,43 @@ class RandomClient(Client):
         self.running = False
 
         await self.cancel_all_orders()
+
         fills = await self.get_fills()
         await self.process_fills(fills)
 
-
-
-
     async def generate_order(self):
         """ Generate an Order. """
-        return self._generate_random_order()
+        order_list = []
+        for symbol in self.symbols: 
+            if (random.random() < 0.5):
+                order_list.append(Order(
+                    order_id=str(uuid.uuid4()),
+                    symbol=symbol,
+                    side=Side.BUY,
+                    price=99.00,
+                    quantity=1,
+                    remaining_quantity=10,
+                    status=OrderStatus.NEW,
+                    timestamp=dt.now(),
+                    client_id=self.name,
+                    engine_origin_addr=self.me_addr,
+                ))
+            else: 
+                order_list.append(Order(
+                    order_id=str(uuid.uuid4()),
+                    symbol=symbol,
+                    side=Side.SELL,
+                    price=101.00,
+                    quantity=1,
+                    remaining_quantity=10,
+                    status=OrderStatus.NEW,
+                    timestamp=dt.now(),
+                    client_id=self.name,
+                    engine_origin_addr=self.me_addr,
+                ))
+
+        return order_list 
+
 
     async def process_fills(self, fills: List[Fill]):
         """ Process a list of fills. 
@@ -59,19 +91,19 @@ class RandomClient(Client):
 
 async def main():
     name = str(input("Supply name: \n"))
-    random_client = RandomClient(name=name)
+    market_maker = MarketMaker(name=name)
 
     # run client
-    await random_client.run()
+    await market_maker.run()
 
     # run client for some time
-    await asyncio.sleep(5) # in seconds
+    await asyncio.sleep(30) # in seconds
 
     # stop client
-    await random_client.stop()
+    await market_maker.stop()
 
     await asyncio.sleep(1) # give time to log positions
-    random_client.log_positions() # get final positions
+    market_maker.log_positions() # get final positions
 
 if __name__ == "__main__":
     asyncio.run(main())

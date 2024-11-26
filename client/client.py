@@ -48,7 +48,10 @@ class Client:
         self.log_directory = os.getcwd() + "/logs/client_logs/"
         self.log_file = os.getcwd() + "/logs/client_logs/" + name
         self.balance = balance
+        self.symbols = symbols
         self.positions = positions.copy()
+        for symbol in self.symbols:
+            self.positions.update({symbol : 0})
         self.location = location
         self.connected_engine = None
         self.latencies = []
@@ -66,7 +69,6 @@ class Client:
 
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
-        self.symbols = symbols
 
     async def submit_order(self, order: Order):
         if not self.connected_to_me:
@@ -200,7 +202,7 @@ class Client:
 
         await self.cancel_all_orders()
 
-    async def generate_order(self) -> Order:
+    async def generate_order(self):
         raise NotImplementedError
 
     async def process_fills(self, fills: List[Fill]):
@@ -216,10 +218,15 @@ class Client:
             self.balance += fill.quantity * fill.price
             self.positions[fill.symbol] -= fill.quantity
 
-    def log_positions(self):
-        self.logger.info(f"Name: {self.name}")
-        self.logger.info(f"Balance: {round(self.balance, 2)}")
-        self.logger.info(f"Positions: \n {self.positions}")
+    def log_positions(self, priority: str = "INFO"):
+        if priority == "INFO":
+            self.logger.info(f"Name: {self.name}")
+            self.logger.info(f"Balance: {round(self.balance, 2)}")
+            self.logger.info(f"Positions: \n {self.positions}")
+        if priority == "DEBUG":
+            self.logger.debug(f"Name: {self.name}")
+            self.logger.debug(f"Balance: {round(self.balance, 2)}")
+            self.logger.debug(f"Positions: \n {self.positions}")
 
     def mean_latency(self):
         return sum(self.latencies) / len(self.latencies)
@@ -237,10 +244,10 @@ class Client:
 
         if gen_quantity % 2 == 0:
             gen_side = Side.SELL
-            gen_price = round(random.uniform(95, 105), 2)
+            gen_price = round(random.uniform(90, 110), 2)
         else:
             gen_side = Side.BUY
-            gen_price = round(random.uniform(90, 100), 2)
+            gen_price = round(random.uniform(90, 110), 2)
 
         return Order(
             order_id=str(uuid.uuid4()),

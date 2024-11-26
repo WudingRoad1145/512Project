@@ -5,7 +5,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.getcwd())
 
-
+from simulation.client_examples.random_client import RandomClient
+from simulation.client_examples.market_maker import MarketMaker
 from client.client import Client
 
 
@@ -14,37 +15,37 @@ async def main():
     DELAY_FACTOR = 2
     SIM_DURATION = 10  # in seconds
     EXCHANGE_ADDR = "127.0.0.1:50050"
-    client_names = [
+    random_client_names = [
         "Adam",
-        "Betsy",
-        "Charlie",
-        "Diana",
-        "Eric",
-        "Fred",
-        "Geoffrey",
-        "Harry",
-        "Ian",
-        "Jill",
-        "Kelly",
-        "Larry",
-        "Mike",
-        "Natalie",
-        "Oscar",
+        #        "Betsy",
+        #        "Charlie",
+        #        "Diana",
+        #        "Eric",
+        #        "Fred",
+        #        "Geoffrey",
+        #        "Harry",
+        #        "Ian",
+        #        "Jill",
+        #        "Kelly",
+        #        "Larry",
+        #        "Mike",
+        #        "Natalie",
+        #        "Oscar",
     ]
     clients = []
 
-    for client_name in client_names:
+    for client_name in random_client_names:
         clients.append(
-            Client(
+            RandomClient(
                 name=client_name,
-                authentication_key="password",
-                symbols=symbol_list,
-                delay_factor=DELAY_FACTOR,
-                exchange_addr=EXCHANGE_ADDR,
-                me_addr="127.0.0.1:50051",
-                direct_connect=False,
             )
         )
+
+    clients.append(
+        MarketMaker(
+            name='imc'
+        )
+    )
 
     for client in clients:
         await client.run()
