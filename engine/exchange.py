@@ -46,6 +46,9 @@ class Exchange:
 
         # TODO: Make this base on distance instead of random
 
+        if len(list(self.me_data.keys())) == 0:
+            self.logger.critical(f"no matching engines registered")
+
         matched_me_name = random.choice(list(self.me_data.keys()))
         self.logger.info(f"assigned client to {matched_me_name}")
         return self.me_data[matched_me_name]["address"]
@@ -55,3 +58,24 @@ class Exchange:
         self.logger.info(f"authenticated client {client_id}")
 
         return True
+
+    def authenticate_me(self, authentication_request):
+        self.logger.info(f"authenticated me {authentication_request.engine_id}")
+        # TODO: Actually check password
+        return True
+
+    async def register_me(self, registration_request):
+        self.me_data.update({
+            registration_request.engine_id : {
+                "location_x" : 0,
+                "location_y" : 0,
+                "address" : registration_request.engine_addr
+            }
+        })
+
+    async def get_matching_engine_addresses(self):
+        engine_addresses = []
+        for engine_id in self.me_data.keys():
+            engine_addresses.append(self.me_data[engine_id]["address"])
+
+        return engine_addresses

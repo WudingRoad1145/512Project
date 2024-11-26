@@ -75,6 +75,16 @@ class MatchingServiceStub(object):
                 request_serializer=proto_dot_matching__service__pb2.ClientRegistrationRequest.SerializeToString,
                 response_deserializer=proto_dot_matching__service__pb2.ClientRegistrationResponse.FromString,
                 _registered_method=True)
+        self.RegisterME = channel.unary_unary(
+                '/matching.MatchingService/RegisterME',
+                request_serializer=proto_dot_matching__service__pb2.RegisterMERequest.SerializeToString,
+                response_deserializer=proto_dot_matching__service__pb2.RegisterMEResponse.FromString,
+                _registered_method=True)
+        self.DiscoverME = channel.unary_unary(
+                '/matching.MatchingService/DiscoverME',
+                request_serializer=proto_dot_matching__service__pb2.DiscoverMERequest.SerializeToString,
+                response_deserializer=proto_dot_matching__service__pb2.DiscoverMEResponse.FromString,
+                _registered_method=True)
 
 
 class MatchingServiceServicer(object):
@@ -139,6 +149,20 @@ class MatchingServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RegisterME(self, request, context):
+        """ME Registration
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DiscoverME(self, request, context):
+        """ME Discovery
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MatchingServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -181,6 +205,16 @@ def add_MatchingServiceServicer_to_server(servicer, server):
                     servicer.RegisterClient,
                     request_deserializer=proto_dot_matching__service__pb2.ClientRegistrationRequest.FromString,
                     response_serializer=proto_dot_matching__service__pb2.ClientRegistrationResponse.SerializeToString,
+            ),
+            'RegisterME': grpc.unary_unary_rpc_method_handler(
+                    servicer.RegisterME,
+                    request_deserializer=proto_dot_matching__service__pb2.RegisterMERequest.FromString,
+                    response_serializer=proto_dot_matching__service__pb2.RegisterMEResponse.SerializeToString,
+            ),
+            'DiscoverME': grpc.unary_unary_rpc_method_handler(
+                    servicer.DiscoverME,
+                    request_deserializer=proto_dot_matching__service__pb2.DiscoverMERequest.FromString,
+                    response_serializer=proto_dot_matching__service__pb2.DiscoverMEResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -400,6 +434,60 @@ class MatchingService(object):
             '/matching.MatchingService/RegisterClient',
             proto_dot_matching__service__pb2.ClientRegistrationRequest.SerializeToString,
             proto_dot_matching__service__pb2.ClientRegistrationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RegisterME(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/matching.MatchingService/RegisterME',
+            proto_dot_matching__service__pb2.RegisterMERequest.SerializeToString,
+            proto_dot_matching__service__pb2.RegisterMEResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DiscoverME(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/matching.MatchingService/DiscoverME',
+            proto_dot_matching__service__pb2.DiscoverMERequest.SerializeToString,
+            proto_dot_matching__service__pb2.DiscoverMEResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -226,6 +226,30 @@ class ExchangeServicer(pb2_grpc.MatchingServiceServicer):
                 match_engine_address=""
             )
 
+    async def RegisterME(self, request, context):
+        if (self.exchange.authenticate_me(request)):
+            await self.exchange.register_me(request)
+            return pb2.RegisterMEResponse(
+                status="SUCCESSFUL"
+            )
+        else:
+            return pb2.RegisterMEResponse(
+                status="FAILURE"
+            )
+
+    async def DiscoverME(self, request, context): 
+        if (self.exchange.authenticate_me(request)):
+            engine_address_list = await self.exchange.get_matching_engine_addresses()
+            return pb2.DiscoverMEResponse(
+                status="SUCCESSFUL",
+                engine_addresses=engine_address_list
+            )
+        else:
+            return pb2.DiscoverMEResponse(
+                status="FAILURE",
+                engine_addresses=[]
+            )
+
 
 
 async def serve_ME(engine: MatchEngine, address: str) -> aio.Server:

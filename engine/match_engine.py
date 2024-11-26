@@ -6,10 +6,23 @@ from common.order import Order, OrderStatus
 from common.orderbook import OrderBook
 from client.custom_formatter import LogFactory
 from engine.synchronizer import OrderBookSynchronizer
+from engine.cancel_fairy import CancelFairy
+
+import grpc
+import proto.matching_service_pb2 as pb2
+import proto.matching_service_pb2_grpc as pb2_grpc
 
 
 class MatchEngine:
-    def __init__(self, engine_id: str, engine_addr: str, synchronizer: OrderBookSynchronizer, authentication_key: str = "password"):
+    def __init__(
+            self, 
+            engine_id: str, 
+            engine_addr: str, 
+            synchronizer: OrderBookSynchronizer, 
+            cancel_fairy: CancelFairy,
+            authentication_key: str = "password",
+            exchange_credentials: str = "password"
+    ):
         self.engine_id = engine_id
         self.address = engine_addr
         self.orderbooks: Dict[str, OrderBook] = {}
@@ -25,10 +38,13 @@ class MatchEngine:
         self.num_orders = 0
         self.num_fills = 0
         self.authentication_key = authentication_key
+        self.exchange_credentials = exchange_credentials
         self.synchronizer = synchronizer
+        self.cancel_fairy = cancel_fairy
         self.fill_routing_table = {}
 
         self.symbol_bbo_lookup = {}
+
 
     async def start_synchronizer(self):
         await self.synchronizer.start()
@@ -50,6 +66,12 @@ class MatchEngine:
             await self.synchronizer.route_order(order, best_me_addr)
             return {'incoming_fills' : [], 'resting_fills' : []}
 
+        # add this order to the record of active orders
+        self.cancel_fairy.active_orders.update({order.order_id : {
+            "remaining_quantity" : order.remaining_quantity,
+            "address" : self.address
+        }})
+
         self.orders[order.order_id] = order
 
         # update fill routing table
@@ -60,8 +82,12 @@ class MatchEngine:
         self.validate_order(order)
         self.logger.debug(f"order validated")
 
-        # add the order
-        fills = self.orderbooks[order.symbol].add_order(order)
+        # add the order if not cancelled
+        fills = {}
+        async with asyncio.Lock():
+            if order.order_id in self.cancel_fairy.active_orders.keys():
+                fills = self.orderbooks[order.symbol].add_order(order, self.cancel_fairy.active_orders)
+
         self.logger.debug(f"order added")
         self.num_orders += 1
 
@@ -107,6 +133,26 @@ class MatchEngine:
         else:
             self.logger.warning(f"Attempted duplicate registration of client {client_name}")
             # TODO: Maybe prevent connection here?
+
+    async def connect_to_exchange(self, exchange_addr):
+        try:
+            self.exchange_channel = grpc.aio.insecure_channel(exchange_addr)
+            self.stub = pb2_grpc.MatchingServiceStub(self.exchange_channel)
+            response = await self.stub.RegisterME(pb2.RegisterMERequest(
+                engine_id=self.engine_id,
+                engine_addr=self.address,
+                engine_credentials=self.exchange_credentials
+            ))
+
+            if response.status == "SUCCESSFUL":
+                self.logger.info(f"ME {self.engine_id} registered with exchange")
+                self.connected_to_exchange = True
+            else:
+                self.logger.error(f"unsuccessful registration with exchange")
+                self.connected_to_exchange = False
+        except Exception as e:
+            self.logger.error(f"exchange registration error: {e}")
+
 
 
     def authenticate(self, client_id : str, client_authentication : str):

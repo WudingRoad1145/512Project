@@ -202,3 +202,37 @@ class ClientRegistrationResponse(_message.Message):
     status: str
     match_engine_address: str
     def __init__(self, status: _Optional[str] = ..., match_engine_address: _Optional[str] = ...) -> None: ...
+
+class RegisterMERequest(_message.Message):
+    __slots__ = ("engine_id", "engine_addr", "engine_credentials")
+    ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_ADDR_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    engine_id: str
+    engine_addr: str
+    engine_credentials: str
+    def __init__(self, engine_id: _Optional[str] = ..., engine_addr: _Optional[str] = ..., engine_credentials: _Optional[str] = ...) -> None: ...
+
+class RegisterMEResponse(_message.Message):
+    __slots__ = ("status",)
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    def __init__(self, status: _Optional[str] = ...) -> None: ...
+
+class DiscoverMERequest(_message.Message):
+    __slots__ = ("engine_id", "engine_addr", "engine_credentials")
+    ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_ADDR_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_CREDENTIALS_FIELD_NUMBER: _ClassVar[int]
+    engine_id: str
+    engine_addr: str
+    engine_credentials: str
+    def __init__(self, engine_id: _Optional[str] = ..., engine_addr: _Optional[str] = ..., engine_credentials: _Optional[str] = ...) -> None: ...
+
+class DiscoverMEResponse(_message.Message):
+    __slots__ = ("status", "engine_addresses")
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_ADDRESSES_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    engine_addresses: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, status: _Optional[str] = ..., engine_addresses: _Optional[_Iterable[str]] = ...) -> None: ...

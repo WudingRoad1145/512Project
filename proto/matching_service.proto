@@ -29,6 +29,12 @@ service MatchingService {
 
     // Client Registration
     rpc RegisterClient (ClientRegistrationRequest) returns (ClientRegistrationResponse) {}
+
+    // ME Registration
+    rpc RegisterME (RegisterMERequest) returns (RegisterMEResponse) {}
+
+    // ME Discovery
+    rpc DiscoverME (DiscoverMERequest) returns (DiscoverMEResponse) {}
 }
 
 // Order Submission
@@ -150,4 +156,26 @@ message ClientRegistrationRequest {
 message ClientRegistrationResponse {
     string status = 1;
     string match_engine_address = 2;
+}
+
+// matching engine joining and discovery
+
+message RegisterMERequest {
+    string engine_id = 1;
+    string engine_addr = 2;
+    string engine_credentials = 3;
+}
+message RegisterMEResponse {
+    string status = 1;
+}
+
+message DiscoverMERequest {
+    string engine_id = 1;
+    string engine_addr = 2;
+    string engine_credentials = 3;
+}
+
+message DiscoverMEResponse {
+    string status = 1;
+    repeated string engine_addresses = 2;
 }
