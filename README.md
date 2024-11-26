@@ -5,7 +5,7 @@ A simple distributed order matching system that demonstrates how multiple matchi
 Final Project for CS512 Distsys 2024 Fall
 
 ## Project Structure
-.
+```
 ├── client
 │   ├── client.py
 │   ├── custom_formatter.py
@@ -41,6 +41,7 @@ Final Project for CS512 Distsys 2024 Fall
     │   ├── start_exchange.py
     │   └── start_me.py
     ├── simulation.py
+```
 
 ## Features
 - Multiple matching engines forming a distributed exchange system
