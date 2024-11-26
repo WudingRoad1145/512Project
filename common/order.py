@@ -34,6 +34,7 @@ class Order:
         else:
             return f"BUY {self.quantity} {self.symbol} @{self.price}"
 
+
 def pretty_print_OrderRequest(order) -> str:
     if order.side == "SELL":
         return f"SELL {order.quantity} {order.symbol} @{order.price}"
@@ -45,6 +46,7 @@ def pretty_print_OrderRequest(order) -> str:
         return f"BUY {order.quantity} {order.symbol} @{order.price}"
     else:
         return f"AMBIGUOUS SIDE ORDER: {order}"
+
 
 @dataclass
 class Fill:

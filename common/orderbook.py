@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List
 from collections import defaultdict
-from .order import Order, Fill, Side
+from .order import Order, Fill
 
 
 class OrderBook:
@@ -33,17 +33,17 @@ class OrderBook:
                     if cancellable_order.order_id == order_msg.order_id:
                         remaining_quantity = cancellable_order.remaining_quantity
                         self.bids[order_msg.price].remove(cancellable_order)
-                        logger.info(f"Successfully cancelled order!")
+                        logger.info("Successfully cancelled order!")
                         return True, remaining_quantity
             if order_msg.side == "SELL":
                 for cancellable_order in self.asks[order_msg.price]:
                     if cancellable_order.order_id == order_msg.order_id:
                         remaining_quantity = cancellable_order.remaining_quantity
                         self.asks[order_msg.price].remove(cancellable_order)
-                        logger.info(f"Successfully cancelled order!")
+                        logger.info("Successfully cancelled order!")
                         return True, remaining_quantity
 
-            logger.warning(f"cancel failed: not in orderbook")
+            logger.warning("cancel failed: not in orderbook")
             return False, 0
         else:
             logger.warning("cancel failed: not in active_orders")
@@ -94,7 +94,8 @@ class OrderBook:
             for resting_order in orders[:]:
                 if resting_order.order_id in active_orders:
                     fill_qty = min(
-                        incoming_order.remaining_quantity, resting_order.remaining_quantity
+                        incoming_order.remaining_quantity,
+                        resting_order.remaining_quantity,
                     )
                     if fill_qty <= 0:
                         continue
@@ -158,7 +159,8 @@ class OrderBook:
             for resting_order in orders[:]:
                 if resting_order.order_id in active_orders:
                     fill_qty = min(
-                        incoming_order.remaining_quantity, resting_order.remaining_quantity
+                        incoming_order.remaining_quantity,
+                        resting_order.remaining_quantity,
                     )
                     if fill_qty <= 0:
                         continue
@@ -211,7 +213,7 @@ class OrderBook:
                         orders.remove(resting_order)
                         del active_orders[resting_order.order_id]
                     if incoming_order.remaining_quantity <= 0:
-                        #orders.remove(incoming_order)
+                        # orders.remove(incoming_order)
                         del active_orders[incoming_order.order_id]
                 else:
                     orders.remove(resting_order)

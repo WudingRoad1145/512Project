@@ -6,23 +6,30 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import asyncio
 import random
 from datetime import datetime as dt
-from datetime import timezone
 import pytz
 
 import time
 import uuid
 
 from client.custom_formatter import LogFactory
-from common.order import Order, Side, OrderStatus, Fill, pretty_print_FillResponse, pretty_print_OrderRequest
+from common.order import (
+    Order,
+    Side,
+    OrderStatus,
+    Fill,
+    pretty_print_FillResponse,
+    pretty_print_OrderRequest,
+)
 
 import grpc
 
 import proto.matching_service_pb2 as pb2
 import proto.matching_service_pb2_grpc as pb2_grpc
 
-class Client: 
-    """ gRPC client for order submission
-    """
+
+class Client:
+    """gRPC client for order submission"""
+
     def __init__(
         self,
         name: str,
@@ -34,7 +41,7 @@ class Client:
         delay_factor: float = 1.0,
         exchange_addr: str = "127.0.0.1:50050",
         me_addr: str = "",
-        direct_connect: bool = False
+        direct_connect: bool = False,
     ):
         self.name = name
         self.authentication_key = authentication_key
@@ -70,7 +77,7 @@ class Client:
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             self.logger.info(f"{self.name}: {order.pretty_print()}")
 
-            eastern = pytz.timezone('US/Eastern')
+            eastern = pytz.timezone("US/Eastern")
             order_msg = pb2.OrderRequest(
                 order_id=str(order.order_id),
                 symbol=str(order.symbol),
@@ -80,13 +87,17 @@ class Client:
                 remaining_quantity=int(order.quantity),
                 client_id=str(order.client_id),
                 engine_origin_addr=str(self.me_addr),
-                timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9))
+                timestamp=(
+                    int(order.timestamp.astimezone(eastern).timestamp() * 10**9)
+                ),
             )
             self.logger.debug(f"Sent OrderRequest: {order_msg}")
             response = await self.stub.SubmitOrder(order_msg)
 
             if response.status == "ERROR":
-                self.logger.error(f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}")
+                self.logger.error(
+                    f"Received response to order {order.pretty_print()}: {response.status} {response.error_message}"
+                )
 
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
@@ -96,15 +107,16 @@ class Client:
         if not self.connected_to_me:
             self.logger.error("No matching engine recorded")
         else:
-            fill_stream = self.stub.GetFills(pb2.FillRequest(
-                client_id=self.name,
-                engine_destination_addr=self.me_addr, # NOTE: Unused
-                timeout=1_000 # NOTE: Unused
-            ))
-
+            fill_stream = self.stub.GetFills(
+                pb2.FillRequest(
+                    client_id=self.name,
+                    engine_destination_addr=self.me_addr,  # NOTE: Unused
+                    timeout=1_000,  # NOTE: Unused
+                )
+            )
 
             fill = await fill_stream.read()
-            while (fill):
+            while fill:
                 self.logger.info(f"FILLED: {pretty_print_FillResponse(fill)}")
                 self.update_positions(fill)
                 fill = await fill_stream.read()
@@ -114,30 +126,37 @@ class Client:
             try:
                 self.exchange_channel = grpc.aio.insecure_channel(self.exchange_addr)
                 self.connected_to_exchange = True
-                self.logger.info(f"connected to exchange at address {self.exchange_addr}")
+                self.logger.info(
+                    f"connected to exchange at address {self.exchange_addr}"
+                )
 
                 self.exchange_stub = pb2_grpc.MatchingServiceStub(self.exchange_channel)
-                response = await self.exchange_stub.RegisterClient(pb2.ClientRegistrationRequest(
-                    client_id=self.name,
-                    client_authentication=self.authentication_key,
-                    client_x=0,
-                    client_y=0,
-                ))
-                self.logger.info(f"Received registration response from exchange: {response}")
+                response = await self.exchange_stub.RegisterClient(
+                    pb2.ClientRegistrationRequest(
+                        client_id=self.name,
+                        client_authentication=self.authentication_key,
+                        client_x=0,
+                        client_y=0,
+                    )
+                )
+                self.logger.info(
+                    f"Received registration response from exchange: {response}"
+                )
                 self.me_addr = response.match_engine_address
             except Exception as e:
                 self.logger.error(f"exchange registration error: {e}")
 
-
         try:
             self.me_channel = grpc.aio.insecure_channel(self.me_addr)
             self.stub = pb2_grpc.MatchingServiceStub(self.me_channel)
-            response = await self.stub.RegisterClient(pb2.ClientRegistrationRequest(
-                client_id=self.name,
-                client_authentication=self.authentication_key,
-                client_x=0,
-                client_y=0,
-            ))
+            response = await self.stub.RegisterClient(
+                pb2.ClientRegistrationRequest(
+                    client_id=self.name,
+                    client_authentication=self.authentication_key,
+                    client_x=0,
+                    client_y=0,
+                )
+            )
 
             self.connected_to_me = True
             return response
@@ -146,19 +165,19 @@ class Client:
 
         return None
 
-
-
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         self.running = True
         self.order_running = True
         self.fill_running = True
         registration_response = await self.register()
-        if (registration_response):
-            if ("SUCCESSFUL" in registration_response.status):
+        if registration_response:
+            if "SUCCESSFUL" in registration_response.status:
                 asyncio.create_task(self.run_loop())
             else:
-                self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")
+                self.logger.error(
+                    f"Registration failed for client {self.name} with response status {registration_response.status}"
+                )
 
     async def run_loop(self):
         while self.running:
@@ -169,8 +188,6 @@ class Client:
             if self.order_running:
                 await self.submit_order(order)
 
-
-
     async def stop(self):
         self.logger.info("Stopping run")
         self.order_running = False
@@ -178,7 +195,6 @@ class Client:
         await self.get_fills_and_update()
         self.fill_running = False
         self.running = False
-
 
         self.cancel_all_orders
 
@@ -228,25 +244,25 @@ class Client:
             status=OrderStatus.NEW,
             timestamp=dt.now(),
             client_id=self.name,
-            engine_origin_addr=self.me_addr
+            engine_origin_addr=self.me_addr,
         )
 
     async def cancel_order(self, order: Order):
         self.logger.info(f"cancelling order {pretty_print_OrderRequest(order)}")
         self.logger.debug(f"cancelling full order {order}")
 
-        eastern = pytz.timezone('US/Eastern')
-#        order_obj = {
-#            "order_id" : order.order_id,
-#            "symbol" : order.symbol,
-#            "side" : order.side.name,
-#            "price" : order.price,
-#            "quantity" : order.quantity,
-#            "remaining_quantity" : order.remaining_quantity,
-#            "client_id" : order.client_id,
-#            "engine_origin_addr" : order.engine_origin_addr,
-#            'timestamp' : (int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
-#        }
+        eastern = pytz.timezone("US/Eastern")
+        #        order_obj = {
+        #            "order_id" : order.order_id,
+        #            "symbol" : order.symbol,
+        #            "side" : order.side.name,
+        #            "price" : order.price,
+        #            "quantity" : order.quantity,
+        #            "remaining_quantity" : order.remaining_quantity,
+        #            "client_id" : order.client_id,
+        #            "engine_origin_addr" : order.engine_origin_addr,
+        #            'timestamp' : (int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
+        #        }
 
         order_obj = pb2.OrderRequest(
             order_id=order.order_id,
@@ -257,21 +273,23 @@ class Client:
             remaining_quantity=int(order.remaining_quantity),
             client_id=order.client_id,
             engine_origin_addr=order.engine_origin_addr,
-            timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
-
+            timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10**9)),
         )
 
-
-        response = await self.stub.CancelOrder(pb2.CancelOrderRequest(
-            order_id = order.order_id,
-            client_id = order.client_id,
-            order_record = order_obj
-        ))
+        response = await self.stub.CancelOrder(
+            pb2.CancelOrderRequest(
+                order_id=order.order_id,
+                client_id=order.client_id,
+                order_record=order_obj,
+            )
+        )
 
         if response.status == "SUCCESSFUL":
-            self.logger.info(f"cancel was successful for quantity {response.quantity_cancelled}")
+            self.logger.info(
+                f"cancel was successful for quantity {response.quantity_cancelled}"
+            )
         else:
-            self.logger.warning(f"cancel failed")
+            self.logger.warning("cancel failed")
 
     async def cancel_all_orders(self):
         self.logger.info(f"cancelling all orders ({len(self.active_orders)} orders)")

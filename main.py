@@ -63,7 +63,7 @@ async def exchange_simulation():
     for client in clients:
         client.log_positions()
 
-    # stop clients 
+    # stop clients
     for client in clients:
         await client.stop()
 

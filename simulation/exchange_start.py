@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.getcwd())
 
@@ -8,9 +9,10 @@ from engine.match_engine import MatchEngine
 from engine.exchange import Exchange
 from engine.synchronizer import OrderBookSynchronizer
 from engine.cancel_fairy import CancelFairy
-from network.grpc_server import MatchingServicer, serve_ME, serve_exchange
+from network.grpc_server import serve_ME, serve_exchange
 
 from client.custom_formatter import LogFactory
+
 
 async def main():
     NUM_ENGINES = 5
@@ -40,27 +42,25 @@ async def main():
         logger.error(f"Failed to start exchange: {e}")
         raise
 
-
-    # Create engines and corresponding synchronizers 
+    # Create engines and corresponding synchronizers
     for i in range(NUM_ENGINES):
         synchronizer = OrderBookSynchronizer(
-            engine_id=f"engine_{i}", 
-            engine_addr=f"{IP_ADDR}:{base_port + i}", 
+            engine_id=f"engine_{i}",
+            engine_addr=f"{IP_ADDR}:{base_port + i}",
         )
         cancel_fairy = CancelFairy(
-            engine_id=f"engine_{i}", 
-            engine_addr=f"{IP_ADDR}:{base_port + i}", 
+            engine_id=f"engine_{i}",
+            engine_addr=f"{IP_ADDR}:{base_port + i}",
         )
 
         engine = MatchEngine(
-            engine_id=f"engine_{i}", 
-            engine_addr=f"{IP_ADDR}:{base_port + i}", 
-            synchronizer=synchronizer, 
+            engine_id=f"engine_{i}",
+            engine_addr=f"{IP_ADDR}:{base_port + i}",
+            synchronizer=synchronizer,
             cancel_fairy=cancel_fairy,
-            authentication_key=PASSWORD
+            authentication_key=PASSWORD,
         )
         engines.append(engine)
-
 
         # Start gRPC server
         try:
@@ -77,8 +77,12 @@ async def main():
     for engine in engines:
         # discover peers and connect synchronizers and cancel fairies
         await engine.discover_peers(exchange_address)
-        print(f"synchronizer {engine.engine_id} peers: {engine.synchronizer.peer_addresses}")
-        print(f"cancel fairy {engine.engine_id} peers: {engine.cancel_fairy.peer_addresses}")
+        print(
+            f"synchronizer {engine.engine_id} peers: {engine.synchronizer.peer_addresses}"
+        )
+        print(
+            f"cancel fairy {engine.engine_id} peers: {engine.cancel_fairy.peer_addresses}"
+        )
 
     # server cleanup
     for i, server in enumerate(servers):
@@ -86,7 +90,6 @@ async def main():
 
     await exchange_server.wait_for_termination()
 
+
 if __name__ == "__main__":
     asyncio.run(main())
-
-

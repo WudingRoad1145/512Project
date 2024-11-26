@@ -1,12 +1,28 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class OrderRequest(_message.Message):
-    __slots__ = ("order_id", "symbol", "side", "price", "quantity", "remaining_quantity", "client_id", "engine_origin_addr", "timestamp")
+    __slots__ = (
+        "order_id",
+        "symbol",
+        "side",
+        "price",
+        "quantity",
+        "remaining_quantity",
+        "client_id",
+        "engine_origin_addr",
+        "timestamp",
+    )
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_FIELD_NUMBER: _ClassVar[int]
     SIDE_FIELD_NUMBER: _ClassVar[int]
@@ -25,7 +41,18 @@ class OrderRequest(_message.Message):
     client_id: str
     engine_origin_addr: str
     timestamp: int
-    def __init__(self, order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[int] = ..., remaining_quantity: _Optional[int] = ..., client_id: _Optional[str] = ..., engine_origin_addr: _Optional[str] = ..., timestamp: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        order_id: _Optional[str] = ...,
+        symbol: _Optional[str] = ...,
+        side: _Optional[str] = ...,
+        price: _Optional[float] = ...,
+        quantity: _Optional[int] = ...,
+        remaining_quantity: _Optional[int] = ...,
+        client_id: _Optional[str] = ...,
+        engine_origin_addr: _Optional[str] = ...,
+        timestamp: _Optional[int] = ...,
+    ) -> None: ...
 
 class SubmitOrderResponse(_message.Message):
     __slots__ = ("order_id", "status", "error_message")
@@ -35,7 +62,12 @@ class SubmitOrderResponse(_message.Message):
     order_id: str
     status: str
     error_message: str
-    def __init__(self, order_id: _Optional[str] = ..., status: _Optional[str] = ..., error_message: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        order_id: _Optional[str] = ...,
+        status: _Optional[str] = ...,
+        error_message: _Optional[str] = ...,
+    ) -> None: ...
 
 class FillRequest(_message.Message):
     __slots__ = ("client_id", "engine_destination_addr", "timeout")
@@ -45,10 +77,27 @@ class FillRequest(_message.Message):
     client_id: str
     engine_destination_addr: str
     timeout: int
-    def __init__(self, client_id: _Optional[str] = ..., engine_destination_addr: _Optional[str] = ..., timeout: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        client_id: _Optional[str] = ...,
+        engine_destination_addr: _Optional[str] = ...,
+        timeout: _Optional[int] = ...,
+    ) -> None: ...
 
 class Fill(_message.Message):
-    __slots__ = ("fill_id", "order_id", "symbol", "side", "price", "quantity", "remaining_quantity", "timestamp", "buyer_id", "seller_id", "engine_destination_addr")
+    __slots__ = (
+        "fill_id",
+        "order_id",
+        "symbol",
+        "side",
+        "price",
+        "quantity",
+        "remaining_quantity",
+        "timestamp",
+        "buyer_id",
+        "seller_id",
+        "engine_destination_addr",
+    )
     FILL_ID_FIELD_NUMBER: _ClassVar[int]
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_FIELD_NUMBER: _ClassVar[int]
@@ -71,7 +120,20 @@ class Fill(_message.Message):
     buyer_id: str
     seller_id: str
     engine_destination_addr: str
-    def __init__(self, fill_id: _Optional[str] = ..., order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[int] = ..., remaining_quantity: _Optional[int] = ..., timestamp: _Optional[int] = ..., buyer_id: _Optional[str] = ..., seller_id: _Optional[str] = ..., engine_destination_addr: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        fill_id: _Optional[str] = ...,
+        order_id: _Optional[str] = ...,
+        symbol: _Optional[str] = ...,
+        side: _Optional[str] = ...,
+        price: _Optional[float] = ...,
+        quantity: _Optional[int] = ...,
+        remaining_quantity: _Optional[int] = ...,
+        timestamp: _Optional[int] = ...,
+        buyer_id: _Optional[str] = ...,
+        seller_id: _Optional[str] = ...,
+        engine_destination_addr: _Optional[str] = ...,
+    ) -> None: ...
 
 class PutFillRequest(_message.Message):
     __slots__ = ("client_id", "fill")
@@ -79,7 +141,11 @@ class PutFillRequest(_message.Message):
     FILL_FIELD_NUMBER: _ClassVar[int]
     client_id: str
     fill: Fill
-    def __init__(self, client_id: _Optional[str] = ..., fill: _Optional[_Union[Fill, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        client_id: _Optional[str] = ...,
+        fill: _Optional[_Union[Fill, _Mapping]] = ...,
+    ) -> None: ...
 
 class PutFillResponse(_message.Message):
     __slots__ = ("status",)
@@ -95,7 +161,12 @@ class CancelOrderRequest(_message.Message):
     order_id: str
     client_id: str
     order_record: OrderRequest
-    def __init__(self, order_id: _Optional[str] = ..., client_id: _Optional[str] = ..., order_record: _Optional[_Union[OrderRequest, _Mapping]] = ...) -> None: ...
+    def __init__(
+        self,
+        order_id: _Optional[str] = ...,
+        client_id: _Optional[str] = ...,
+        order_record: _Optional[_Union[OrderRequest, _Mapping]] = ...,
+    ) -> None: ...
 
 class CancelOrderResponse(_message.Message):
     __slots__ = ("order_id", "status", "quantity_cancelled")
@@ -105,7 +176,12 @@ class CancelOrderResponse(_message.Message):
     order_id: str
     status: str
     quantity_cancelled: int
-    def __init__(self, order_id: _Optional[str] = ..., status: _Optional[str] = ..., quantity_cancelled: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        order_id: _Optional[str] = ...,
+        status: _Optional[str] = ...,
+        quantity_cancelled: _Optional[int] = ...,
+    ) -> None: ...
 
 class PriceLevel(_message.Message):
     __slots__ = ("price", "quantity", "order_count")
@@ -115,7 +191,12 @@ class PriceLevel(_message.Message):
     price: float
     quantity: int
     order_count: int
-    def __init__(self, price: _Optional[float] = ..., quantity: _Optional[int] = ..., order_count: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        price: _Optional[float] = ...,
+        quantity: _Optional[int] = ...,
+        order_count: _Optional[int] = ...,
+    ) -> None: ...
 
 class SyncRequest(_message.Message):
     __slots__ = ("symbol", "engine_id", "num_levels")
@@ -125,7 +206,12 @@ class SyncRequest(_message.Message):
     symbol: str
     engine_id: str
     num_levels: int
-    def __init__(self, symbol: _Optional[str] = ..., engine_id: _Optional[str] = ..., num_levels: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        symbol: _Optional[str] = ...,
+        engine_id: _Optional[str] = ...,
+        num_levels: _Optional[int] = ...,
+    ) -> None: ...
 
 class SyncResponse(_message.Message):
     __slots__ = ("symbol", "bids", "asks", "sequence_number", "engine_id")
@@ -139,10 +225,24 @@ class SyncResponse(_message.Message):
     asks: _containers.RepeatedCompositeFieldContainer[PriceLevel]
     sequence_number: int
     engine_id: str
-    def __init__(self, symbol: _Optional[str] = ..., bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., sequence_number: _Optional[int] = ..., engine_id: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        symbol: _Optional[str] = ...,
+        bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        sequence_number: _Optional[int] = ...,
+        engine_id: _Optional[str] = ...,
+    ) -> None: ...
 
 class BroadcastOrderbookRequest(_message.Message):
-    __slots__ = ("symbol", "originating_engine_id", "num_levels", "bids", "asks", "sequence_number")
+    __slots__ = (
+        "symbol",
+        "originating_engine_id",
+        "num_levels",
+        "bids",
+        "asks",
+        "sequence_number",
+    )
     SYMBOL_FIELD_NUMBER: _ClassVar[int]
     ORIGINATING_ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
     NUM_LEVELS_FIELD_NUMBER: _ClassVar[int]
@@ -155,7 +255,15 @@ class BroadcastOrderbookRequest(_message.Message):
     bids: _containers.RepeatedCompositeFieldContainer[PriceLevel]
     asks: _containers.RepeatedCompositeFieldContainer[PriceLevel]
     sequence_number: int
-    def __init__(self, symbol: _Optional[str] = ..., originating_engine_id: _Optional[str] = ..., num_levels: _Optional[int] = ..., bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., sequence_number: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        symbol: _Optional[str] = ...,
+        originating_engine_id: _Optional[str] = ...,
+        num_levels: _Optional[int] = ...,
+        bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        sequence_number: _Optional[int] = ...,
+    ) -> None: ...
 
 class BroadcastOrderbookResponse(_message.Message):
     __slots__ = ("symbol", "receiving_engine_id", "status")
@@ -165,7 +273,12 @@ class BroadcastOrderbookResponse(_message.Message):
     symbol: str
     receiving_engine_id: str
     status: str
-    def __init__(self, symbol: _Optional[str] = ..., receiving_engine_id: _Optional[str] = ..., status: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        symbol: _Optional[str] = ...,
+        receiving_engine_id: _Optional[str] = ...,
+        status: _Optional[str] = ...,
+    ) -> None: ...
 
 class GetOrderbookRequest(_message.Message):
     __slots__ = ("symbol",)
@@ -183,7 +296,13 @@ class GetOrderbookResponse(_message.Message):
     bids: _containers.RepeatedCompositeFieldContainer[PriceLevel]
     asks: _containers.RepeatedCompositeFieldContainer[PriceLevel]
     timestamp: int
-    def __init__(self, symbol: _Optional[str] = ..., bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ..., timestamp: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        symbol: _Optional[str] = ...,
+        bids: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        asks: _Optional[_Iterable[_Union[PriceLevel, _Mapping]]] = ...,
+        timestamp: _Optional[int] = ...,
+    ) -> None: ...
 
 class ClientRegistrationRequest(_message.Message):
     __slots__ = ("client_id", "client_authentication", "client_x", "client_y")
@@ -195,7 +314,13 @@ class ClientRegistrationRequest(_message.Message):
     client_authentication: str
     client_x: int
     client_y: int
-    def __init__(self, client_id: _Optional[str] = ..., client_authentication: _Optional[str] = ..., client_x: _Optional[int] = ..., client_y: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        client_id: _Optional[str] = ...,
+        client_authentication: _Optional[str] = ...,
+        client_x: _Optional[int] = ...,
+        client_y: _Optional[int] = ...,
+    ) -> None: ...
 
 class ClientRegistrationResponse(_message.Message):
     __slots__ = ("status", "match_engine_address")
@@ -203,7 +328,9 @@ class ClientRegistrationResponse(_message.Message):
     MATCH_ENGINE_ADDRESS_FIELD_NUMBER: _ClassVar[int]
     status: str
     match_engine_address: str
-    def __init__(self, status: _Optional[str] = ..., match_engine_address: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, status: _Optional[str] = ..., match_engine_address: _Optional[str] = ...
+    ) -> None: ...
 
 class RegisterMERequest(_message.Message):
     __slots__ = ("engine_id", "engine_addr", "engine_credentials")
@@ -213,7 +340,12 @@ class RegisterMERequest(_message.Message):
     engine_id: str
     engine_addr: str
     engine_credentials: str
-    def __init__(self, engine_id: _Optional[str] = ..., engine_addr: _Optional[str] = ..., engine_credentials: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        engine_id: _Optional[str] = ...,
+        engine_addr: _Optional[str] = ...,
+        engine_credentials: _Optional[str] = ...,
+    ) -> None: ...
 
 class RegisterMEResponse(_message.Message):
     __slots__ = ("status",)
@@ -229,7 +361,12 @@ class DiscoverMERequest(_message.Message):
     engine_id: str
     engine_addr: str
     engine_credentials: str
-    def __init__(self, engine_id: _Optional[str] = ..., engine_addr: _Optional[str] = ..., engine_credentials: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        engine_id: _Optional[str] = ...,
+        engine_addr: _Optional[str] = ...,
+        engine_credentials: _Optional[str] = ...,
+    ) -> None: ...
 
 class DiscoverMEResponse(_message.Message):
     __slots__ = ("status", "engine_addresses")
@@ -237,4 +374,8 @@ class DiscoverMEResponse(_message.Message):
     ENGINE_ADDRESSES_FIELD_NUMBER: _ClassVar[int]
     status: str
     engine_addresses: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, status: _Optional[str] = ..., engine_addresses: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(
+        self,
+        status: _Optional[str] = ...,
+        engine_addresses: _Optional[_Iterable[str]] = ...,
+    ) -> None: ...
