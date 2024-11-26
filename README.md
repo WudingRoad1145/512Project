@@ -68,3 +68,5 @@ Final Project for CS512 Distsys 2024 Fall
 - From the top level directory, navigate to `simulation`. From here, you can edit the files `process/start_exchange.py` and `process/start_me.py` to modify the ip addresses at which the exchange and the matching engines will be located (by default these are on local host). Run the exchange script to create an exchange, and run the `start_me` script (multiple times if desired) to form an exchange with matching engines.
 
 - From the top level directory, run `simulation/client_start.py` to run several predefined clients at the matching engines. Make sure to edit this file to reflect any changes to the exchange ip address if you changed it earlier. 
+
+- If you want to implement your own bot, take a look at `client/automated_trader_template` and `simulation/client_examples/random_client.py`. All you need to implement is the logic for generating orders and the logic for handling fill information

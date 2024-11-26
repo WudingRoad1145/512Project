@@ -7,7 +7,7 @@ import asyncio
 import random
 from datetime import datetime as dt
 import pytz
-
+from typing import List
 import time
 import uuid
 
@@ -102,7 +102,7 @@ class Client:
             receive_time = time.time()
             self.latencies.append(receive_time - send_time)
 
-    async def get_fills_and_update(self):
+    async def get_fills(self):
         fills = []
         if not self.connected_to_me:
             self.logger.error("No matching engine recorded")
@@ -117,9 +117,11 @@ class Client:
 
             fill = await fill_stream.read()
             while fill:
+                fills.append(fill)
                 self.logger.info(f"FILLED: {pretty_print_FillResponse(fill)}")
-                self.update_positions(fill)
                 fill = await fill_stream.read()
+
+        return fills
 
     async def register(self):
         if not self.direct_connect:
@@ -182,9 +184,9 @@ class Client:
     async def run_loop(self):
         while self.running:
             await asyncio.sleep(random.random() * self.delay_factor)
-            order = self._generate_random_order()
+            order = await self.generate_order()
             if self.fill_running:
-                await self.get_fills_and_update()
+                await self.get_fills()
             if self.order_running:
                 await self.submit_order(order)
 
@@ -192,11 +194,17 @@ class Client:
         self.logger.info("Stopping run")
         self.order_running = False
 
-        await self.get_fills_and_update()
+        await self.get_fills()
         self.fill_running = False
         self.running = False
 
-        self.cancel_all_orders
+        await self.cancel_all_orders()
+
+    async def generate_order(self) -> Order:
+        raise NotImplementedError
+
+    async def process_fills(self, fills: List[Fill]):
+        raise NotImplementedError
 
     def update_positions(self, fill: Fill):
         if fill.symbol not in self.positions.keys():
