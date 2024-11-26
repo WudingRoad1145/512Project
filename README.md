@@ -1,71 +1,189 @@
-# Distributed Order Matching Engine
+# Distributed Matching Engine
 
-A simple distributed order matching system that demonstrates how multiple matching engines can synchronize order books across different nodes. 
-
-Final Project for CS512 Distsys 2024 Fall
+A distributed matching engine implementation using gRPC for communication between components. The system consists of multiple matching engines that can process orders and synchronize order books across nodes.
 
 ## Project Structure
+
 ```
 .
-├── client
-│   ├── client.py
-├── common
-│   ├── orderbook.py
-│   ├── order.py
-├── engine
-│   ├── exchange.py
-│   ├── match_engine.py
-│   └── synchronizer.py
-├── logs
-│   ├── ...
-├── main.py
-├── network
-│   ├── grpc_server.py
-├── proto
-│   ├── matching_service_pb2_grpc.py
-│   ├── matching_service_pb2.py
-│   ├── matching_service.proto
 ├── README.md
-└── simulation
-    └── simulation.py
+├── requirements.txt
+├── main.py
+├── common/
+│   ├── __init__.py
+│   ├── order.py
+│   └── orderbook.py
+├── engine/
+│   ├── __init__.py
+│   ├── match_engine.py
+│   ├── exchange.py
+│   └── synchronizer.py
+├── network/
+│   ├── __init__.py
+│   └── grpc_server.py
+├── client/
+│   ├── __init__.py
+│   ├── client.py
+│   └── custom_formatter.py
+├── proto/
+│   ├── __init__.py
+│   ├── matching_service.proto
+│   ├── matching_service_pb2.py
+│   ├── matching_service_pb2_grpc.py
+│   └── matching_service_pb2.pyi
+└── simulation/
+    ├── __init__.py
+    ├── simulation.py
+    ├── exchange_start.py
+    ├── client_start.py
+    └── test.py
 ```
 
+## Setup
+
+1. Create and activate a virtual environment (recommended):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Generate protocol buffer code (if modifying proto files):
+```bash
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/matching_service.proto
+```
+
+### Requirements
+
+Create a `requirements.txt` file with the following dependencies:
+```
+grpcio>=1.68.0
+grpcio-tools>=1.68.0
+protobuf>=5.28.1
+pytz
+```
+
+## Architecture
+
+The system has the following main components:
+
+- **Exchange**: Central coordinator that manages client registration and matching engine assignment
+- **Matching Engines**: Multiple matching engine nodes that process orders and maintain order books
+- **Synchronizer**: Component that handles order book synchronization between matching engines
+- **Clients**: Trading clients that can submit orders and receive fills
+
+### Key Components
+
+- `engine/match_engine.py`: Core matching engine implementation
+- `engine/exchange.py`: Exchange layer for client management
+- `engine/synchronizer.py`: Order book synchronization between engines
+- `common/orderbook.py`: Order book implementation with price-time priority
+- `network/grpc_server.py`: gRPC server implementations
+- `client/client.py`: Trading client implementation
+- `proto/matching_service.proto`: Protocol buffer definitions
+
 ## Features
-- Multiple matching engines running on different ports to simulate a distributed exchange system
-- Real-time order book synchronization(most basic logic now)
-- Simple price-time priority matching
-- Support for multiple trading pairs
-- Random order simulation for testing
 
-## Assumptions
-- Each matching machine has an orderbook and its own synchronizer to communicate with other engines
-- Price is handled with a naive event-driven sync (on fills)
+- Multiple matching engine nodes running simultaneously
+- Order book synchronization between engines
+- Client registration and authentication
+- Order routing based on best prices
+- Fill notifications and position tracking
+- Price-time priority matching algorithm
+- Support for multiple trading symbols
 
+## Running the System
 
-## Implementation Details
-- A .proto file defines the structure of the messages and services that will be used for communication. It uses Google's language-agnostic data serialization format used with gRPC(protobuf). To generate gRPC code(you don't need to):
-    ```bash
-    python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/matching_service.proto
-    ```
-- python gRPC package is outdated, make sure you install the latest version of **grpcio**, dependencies in `requirements.txt`
-- Run simulator from main.py
-  - adjust the number of engines, trading pairs, and other simulation parameters
+The system needs to be run in two separate terminal windows/processes:
 
-## TODOs
-- There seems to be some broadcasting issue after fills
-- More robust syncing methods
-  - Event-driven: immediate sync on fills or price changes or large orders
-  - Time-based: periodic full sync to ensure consistency across all machines
-  - Recovery-based: full sync when a peer reconnects or joins
-- Maybe we want to implement a "Exchange Computer System 100" in Figure 1 of the patern as the master file of all machines, traders, and trading data
-- Maybe we want to have a separate "shared memory" as designed in patent somewhere -> maybe a centralized cache?
-- Right now updates are sending over complete orderbook, perhaps we should send incrementally
-- No handling of network issue reconnect/ retry/ any recovery method
-- No handling of new machine joining the network
-- Latency Optimizations: 
-  - parallelizing gRPC calls when broadscasting updates to different peers
-  - batching multiple updates tgt instead of independently?
-- Something fun fun
-- Test entry
+### Terminal 1 - Start Exchange and Matching Engines:
+```bash
+# Activate virtual environment if using one
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Start the exchange and matching engines
+python simulation/exchange_start.py
+```
+
+### Terminal 2 - Start Clients:
+```bash
+# Activate virtual environment if using one
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Start the clients
+python simulation/client_start.py
+```
+
+The simulation will run for a default duration of 10 seconds, during which clients will submit random orders and receive fills.
+
+### Expected Output
+- Terminal 1 will show logs from the exchange and matching engines, including:
+  - Server startup messages
+  - Order book updates
+  - Routing decisions
+  
+- Terminal 2 will show client activity, including:
+  - Client registration
+  - Order submissions
+  - Fill notifications
+  - Final positions
+
+### Monitoring
+- Check the `logs/` directory for detailed logs from each component:
+  - `logs/engine_logs/`: Matching engine logs
+  - `logs/exchange_logs/`: Exchange logs
+  - `logs/client_logs/`: Client logs
+  - `logs/synchronizer_logs/`: Synchronization logs
+
+## Configuration
+
+Key configuration parameters:
+
+- `NUM_ENGINES`: Number of matching engine nodes (default: 2)
+- `PASSWORD`: Authentication key for clients (default: "password")
+- `IP_ADDR`: Network address for services (default: "127.0.0.1")
+- Base ports:
+  - Exchange: 50050
+  - Matching Engines: 50051+
+
+## Protocol
+
+The system uses gRPC for communication with the following main service calls:
+
+- `SubmitOrder`: Submit a new order
+- `CancelOrder`: Cancel an existing order
+- `GetFills`: Stream of fill notifications
+- `RegisterClient`: Client registration
+- `BroadcastOrderbook`: Synchronize order book updates
+- `SyncOrderBook`: Get current order book state
+
+## Logging
+
+The system includes comprehensive logging with different log files for:
+
+- Exchange
+- Matching Engines
+- Clients
+- Synchronizers
+
+Logs are stored in the `logs/` directory with subdirectories for each component type.
+
+## Testing
+
+Run simulations using:
+```bash
+python simulation/simulation.py
+```
+
+The simulation supports configurable parameters for:
+- Number of matching engines
+- Number of clients
+- Trading symbols
+- Order frequency
+- Simulation duration
 
 
