@@ -49,7 +49,7 @@ class CancelFairy:
             "remaining_quantity" : order_msg.quantity,
             "client_id" : order_msg.client_id,
             "engine_origin_addr" : order_msg.engine_origin_addr,
-            "timestamp" : dt.fromtimestamp(order_msg.timestamp / (10 ** 9))
+            "timestamp" : order_msg.timestamp
         }
 
         self.logger.debug(f"active_orders: {self.active_orders}")

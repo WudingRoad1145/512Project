@@ -98,31 +98,31 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
     async def GetOrderBook(self, request, context):
         symbol = request.symbol
-        if symbol in self.engine.orderbooks:
-            orderbook = self.engine.orderbooks[symbol]
-            self.logger.debug(f"processing GetOrderBook for {symbol} \n orderbook: \n {str(orderbook)}")
-            response = pb2.GetOrderbookResponse(
-                symbol=symbol,
-                bids=[
-                    pb2.PriceLevel(
-                        price=price, 
-                        quantity=int(sum(o.remaining_quantity for o in orders)), 
-                        order_count=len(orders)
-                    )
-                    for price, orders in orderbook.bids.items()
-                ],
-                asks=[
-                    pb2.PriceLevel(
-                        price=price, 
-                        quantity=int(sum(o.remaining_quantity for o in orders)), 
-                        order_count=len(orders)
-                    )
-                    for price, orders in orderbook.asks.items()
-                ]
-            )
-        else:
-            self.logger.warning(f"{symbol} not found in orderbooks")
-            response = pb2.GetOrderbookResponse() # empty response
+        if symbol not in self.engine.orderbooks:
+            self.logger.warning(f"{symbol} not found in orderbooks, creating new orderbook for {symbol}")
+            self.engine.create_orderbook(symbol)
+
+        orderbook = self.engine.orderbooks[symbol]
+        self.logger.debug(f"processing GetOrderBook for {symbol} \n orderbook: \n {str(orderbook)}")
+        response = pb2.GetOrderbookResponse(
+            symbol=symbol,
+            bids=[
+                pb2.PriceLevel(
+                    price=price, 
+                    quantity=int(sum(o.remaining_quantity for o in orders)), 
+                    order_count=len(orders)
+                )
+                for price, orders in orderbook.bids.items()
+            ],
+            asks=[
+                pb2.PriceLevel(
+                    price=price, 
+                    quantity=int(sum(o.remaining_quantity for o in orders)), 
+                    order_count=len(orders)
+                )
+                for price, orders in orderbook.asks.items()
+            ]
+        )
 
         return response
 

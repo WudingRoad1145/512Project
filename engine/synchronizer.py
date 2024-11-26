@@ -42,6 +42,8 @@ class OrderBookSynchronizer:
             log_directory=self.log_directory
         ).get_logger()
 
+        # Include itself in peer_stubs
+        self.stub = pb2_grpc.MatchingServiceStub(grpc.aio.insecure_channel(self.engine_addr))
 
     async def start(self):
         """Start the synchronizer"""
@@ -231,9 +233,88 @@ class OrderBookSynchronizer:
         self.logger.debug(f"route order {order.engine_origin_addr} -> {me_addr} return status {order_response.status}")
 
 
-    def lookup_bbo_engine(self, symbol, side):
-        """ Returns the address of the engine with the best bid/ask for a symbol"""
+    async def lookup_bbo_engine(self, order):
+        """Returns the address of the engine with the best bid/ask for a symbol"""
+        side = order.side
+        symbol = order.symbol
+        best_bids_asks = await self.get_global_best_bids_asks([symbol])
+        if side == Side.BUY:
+            # find best ask available
+            if best_bids_asks[1][symbol][0] is None or order.price < best_bids_asks[1][symbol][0]:
+                self.logger.info(f"Best ask for {symbol} is on {best_bids_asks[1][symbol][1]} but order is below, not rerouting")
+                return self.engine_addr
+            return best_bids_asks[1][symbol][1]  
+        else:
+            # find best bid available
+            if best_bids_asks[0][symbol][0] is None or order.price > best_bids_asks[0][symbol][0]:
+                self.logger.info(f"Best bid for {symbol} is on {best_bids_asks[0][symbol][1]} but order is above, not rerouting")
+                return self.engine_addr
+            return best_bids_asks[0][symbol][1]
 
-        # return self.engine_addr
-        return "127.0.0.1:50052"
+    async def get_global_best_bids_asks(self, symbols: List[str]):
+        """Fetch and log global best bids and asks across engines"""
+        self.logger.info(f"Fetching global best bids and asks for {symbols}")
+        global_best_bids = {}
+        global_best_asks = {}
+
+        for symbol in symbols:
+            # Initialize with local best bid and ask
+            local_orderbook = await self._get_local_orderbook(symbol)
+            best_bid = max((level.price for level in local_orderbook.bids if level.quantity > 0), default=float('-inf'))
+            best_ask = min((level.price for level in local_orderbook.asks if level.quantity > 0), default=float('inf'))
+
+            if best_bid is None:
+                self.logger.info(f"No local best bid found for {symbol}")
+            if best_ask is None:
+                self.logger.info(f"No local best ask found for {symbol}")
+
+            global_best_bids[symbol] = (best_bid, self.engine_addr)
+            global_best_asks[symbol] = (best_ask, self.engine_addr)
+
+            for address in self.peer_stubs.keys():
+                try:
+                    stub = self.peer_stubs[address]
+                    request = pb2.GetOrderbookRequest(symbol=symbol)
+                    update = await stub.GetOrderBook(request)
+
+                    best_bid = max((level.price for level in update.bids if level.quantity > 0), default=None)
+                    best_ask = min((level.price for level in update.asks if level.quantity > 0), default=None)
+
+                    if best_bid is not None:
+                        if symbol not in global_best_bids or best_bid > global_best_bids[symbol][0]:
+                            global_best_bids[symbol] = (best_bid, address)
+
+                    if best_ask is not None:
+                        if symbol not in global_best_asks or best_ask < global_best_asks[symbol][0]:
+                            global_best_asks[symbol] = (best_ask, address)
+
+                except Exception as e:
+                    self.logger.error(f"Error fetching order book from {address} for {symbol}: {e}")
+        self.logger.info(f"Global best bids: {global_best_bids}")
+        self.logger.info(f"Global best asks: {global_best_asks}")
+
+        return global_best_bids, global_best_asks
+
+    async def _get_local_orderbook(self, symbol: str):
+        """Fetch the local order book for a symbol"""
+        request = pb2.GetOrderbookRequest(symbol=symbol)
+        response = await self.stub.GetOrderBook(request)
+        return response
+
+    def get_best_bid(self, symbol: str) -> Optional[float]:
+        """Get the best bid price for a symbol in the local order book"""
+        if symbol in self.global_best_prices and 'bid' in self.global_best_prices[symbol]:
+            return self.global_best_prices[symbol]['bid']
+        return None
+
+    def get_best_ask(self, symbol: str) -> Optional[float]:
+        """Get the best ask price for a symbol in the local order book"""
+        if symbol in self.global_best_prices and 'ask' in self.global_best_prices[symbol]:
+            return self.global_best_prices[symbol]['ask']
+        return None
+
+
+
+
+
 

@@ -61,7 +61,7 @@ class MatchEngine:
         self.logger.debug(f"active order state: {self.cancel_fairy.active_orders}")
 
         # First check if the best price for this symbol is on another engine
-        best_me_addr = self.synchronizer.lookup_bbo_engine(order.symbol, order.side)
+        best_me_addr = await self.synchronizer.lookup_bbo_engine(order)
         if best_me_addr != self.address and order.engine_origin_addr == self.address:
             # route the order at most once
             self.logger.info(f"routing order from {self.address} -> {best_me_addr}")

@@ -59,10 +59,7 @@ class Client:
 
         self.logger = LogFactory(self.name, self.log_directory).get_logger()
 
-        if not symbols:
-            self.symbols = ["BTC-USD", "DOGE-BTC", "DUCK-DOGE"]
-        else:
-            self.symbols = symbols
+        self.symbols = symbols
 
     async def submit_order(self, order: Order):
         if not self.connected_to_me:
@@ -151,10 +148,6 @@ class Client:
 
 
 
-
-
-
-
     async def run(self):
         self.logger.info(f"started runnning {self.name}")
         self.running = True
@@ -176,8 +169,9 @@ class Client:
             if self.order_running:
                 await self.submit_order(order)
 
-            if (random.random() < .3):
+            if random.random() < 0.60:
                 await self.cancel_all_orders()
+
 
     async def stop(self):
         self.logger.info("Stopping run")
