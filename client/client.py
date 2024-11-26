@@ -71,8 +71,7 @@ class Client:
             order = self._generate_random_order()
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             self.logger.info(f"{self.name}: {order.pretty_print()}")
-            self.logger.debug(f"full order: {order}")
-            
+
             eastern = pytz.timezone('US/Eastern')
             order_msg = pb2.OrderRequest(
                 order_id=str(order.order_id),
@@ -101,7 +100,7 @@ class Client:
         else:
             fill_stream = self.stub.GetFills(pb2.FillRequest(
                 client_id=self.name,
-                engine_id="ENGINE", # NOTE: Unused
+                engine_destination_addr=self.me_addr, # NOTE: Unused
                 timeout=1_000 # NOTE: Unused
             ))
 

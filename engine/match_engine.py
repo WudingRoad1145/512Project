@@ -1,6 +1,7 @@
 import os
 import queue
 from typing import Dict, Optional
+import asyncio
 from common.order import Order, OrderStatus
 from common.orderbook import OrderBook
 from client.custom_formatter import LogFactory
@@ -44,26 +45,32 @@ class MatchEngine:
         # First check if the best price for this symbol is on another engine
         best_me_addr = self.synchronizer.lookup_bbo_engine(order.symbol, order.side)
         if best_me_addr != self.address and order.engine_origin_addr == self.address:
-
             # route the order at most once
+            self.logger.info(f"routing order from {self.address} -> {best_me_addr}")
             await self.synchronizer.route_order(order, best_me_addr)
+            return {'incoming_fills' : [], 'resting_fills' : []}
+
         self.orders[order.order_id] = order
 
         # update fill routing table
         self.fill_routing_table[order.client_id] = order.engine_origin_addr
+        self.logger.debug(f"registered {order.client_id} wanting fills on engine address {order.engine_origin_addr}")
 
         # validate order
         self.validate_order(order)
+        self.logger.debug(f"order validated")
 
         # add the order
         fills = self.orderbooks[order.symbol].add_order(order)
+        self.logger.debug(f"order added")
         self.num_orders += 1
 
         # NOTE: Turn on this to see order book state after each order
-        self.logger.debug(str(self.orderbooks[order.symbol]))
+        self.logger.debug(f"order book state for {order.symbol} on engine {self.address}:\n" + str(self.orderbooks[order.symbol]))
 
         # Add fills to queues
         if fills:
+            self.logger.debug(f"clients registered with ME {self.address}: {self.clients}")
             for client_id, fill in fills['incoming_fills'] + fills['resting_fills']:
                 if client_id in self.clients:
                     self.fill_queues[client_id].put(fill)
@@ -74,10 +81,11 @@ class MatchEngine:
                     # the filled order was a routed order
                     if client_id in self.fill_routing_table.keys():
                         me_dst_addr = self.fill_routing_table[client_id]
+                        self.logger.debug(f"routing fill for client {client_id} to address {me_dst_addr}")
                         # push a fill 
-                        await self.synchronizer.route_fill(fill, me_dst_addr)
+                        await self.synchronizer.route_fill(fill, client_id, me_dst_addr)
                     else:
-                        self.logger.error(f"{client_id} not a client and is not registered in the routing table")
+                        self.logger.error(f"{client_id} not a registered client of {self.engine_id} and is not registered in the routing table")
 
         return fills
 

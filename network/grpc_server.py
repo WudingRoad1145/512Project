@@ -1,12 +1,15 @@
 from grpc import aio
 import asyncio
+from datetime import datetime as dt
+import os
 
 from proto import matching_service_pb2 as pb2
 from proto import matching_service_pb2_grpc as pb2_grpc
 from engine.match_engine import MatchEngine
 from engine.exchange import Exchange
 from engine.synchronizer import OrderBookSynchronizer
-from common.order import pretty_print_FillResponse
+from common.order import pretty_print_FillResponse, Fill, Side
+from client.custom_formatter import LogFactory
 
 from typing import Dict
 import random
@@ -18,13 +21,18 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         self.engine = engine
         self.clients = []
 
+        self.log_directory = os.getcwd() + "/logs/serve_logs/"
+        self.logger = LogFactory(
+            name=f"Server-ME {self.engine.engine_id}", 
+            log_directory=self.log_directory
+        ).get_logger()
+
     async def SubmitOrder(self, request, context):
         try:
-            self.engine.logger.debug(f"request: {request}")
             await self.engine.submit_order(request)
             return pb2.SubmitOrderResponse(order_id=request.order_id, status="SUCCESS")
         except Exception as e:
-            self.engine.logger.error(f"malformed order request {request} \n\n Error message: {e}")
+            self.logger.error(f"Error while handling order request:\n {request} \n\n Error message: {e}")
             return pb2.SubmitOrderResponse(
                 order_id=request.order_id, status="ERROR", error_message=str(e)
             )
@@ -47,7 +55,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
         # Ensure the requested symbol exists in the local engine
         if request.symbol not in self.engine.orderbooks:
-            self.synchronizer.logger.warning(f"Symbol {request.symbol} not found in local order books.")
+            self.logger.warning(f"Symbol {request.symbol} not found in local order books.")
             return pb2.SyncResponse(
                 symbol=request.symbol,
                 bids=[],  # Empty bids
@@ -80,7 +88,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
             engine_id=self.engine.engine_id,
         )
 
-        self.engine.synchronizer.logger.info(f"ME {request.engine_id} synced {request.symbol} with {response.engine_id}")
+        self.logger.info(f"ME {request.engine_id} synced {request.symbol} with {response.engine_id}")
 
         return response
 
@@ -92,7 +100,7 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
         symbol = request.symbol
         if symbol in self.engine.orderbooks:
             orderbook = self.engine.orderbooks[symbol]
-            self.engine.logger.debug(f"processing GetOrderBook for {symbol} \n orderbook: \n {str(orderbook)}")
+            self.logger.debug(f"processing GetOrderBook for {symbol} \n orderbook: \n {str(orderbook)}")
             response = pb2.GetOrderbookResponse(
                 symbol=symbol,
                 bids=[
@@ -113,15 +121,19 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 ]
             )
         else:
-            self.engine.logger.warning(f"{symbol} not found in orderbooks")
+            self.logger.warning(f"{symbol} not found in orderbooks")
             response = pb2.GetOrderbookResponse() # empty response
 
         return response
 
     async def GetFills(self, request, context):
         eastern = pytz.timezone('US/Eastern')
+
+        self.logger.debug(f"[GET] size of {request.client_id} queue: {len(self.engine.fill_queues[request.client_id].queue)}")
+        self.logger.debug(f"[GET] state of {request.client_id} queue: {self.engine.fill_queues[request.client_id].queue}")
         while not (self.engine.fill_queues[request.client_id].empty()):
             fill = self.engine.fill_queues[request.client_id].get(timeout=1)
+            self.logger.info(f"{pretty_print_FillResponse(fill)}")
             yield pb2.Fill(
                 fill_id=str(fill.fill_id),
                 order_id=str(fill.order_id),
@@ -133,14 +145,34 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 timestamp=(int(fill.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
                 buyer_id=str(fill.buyer_id),
                 seller_id=(fill.seller_id),
-                engine_id=(fill.engine_id),
+                engine_destination_addr=(fill.engine_destination_addr),
             )
-            self.engine.logger.info(f"{pretty_print_FillResponse(fill)}")
 
     async def PutFill(self, request, context):
         try:
-            async with asyncio.Lock():
-                self.engine.fill_queues[request.client_id].put(request.fill)
+            self.logger.debug(f"Fill queues state: {self.engine.fill_queues}")
+
+            # convert request message fill to Fill object
+            fill_obj = Fill(
+                fill_id = request.fill.fill_id,
+                order_id = request.fill.order_id,
+                symbol = request.fill.symbol,
+                side = Side.SELL if request.fill.side == "SELL" else Side.BUY,
+                price = request.fill.price,
+                quantity = request.fill.quantity,
+                remaining_quantity = request.fill.remaining_quantity,
+                timestamp = dt.fromtimestamp(request.fill.timestamp / (10 ** 9)),
+                buyer_id = request.fill.buyer_id,
+                seller_id = request.fill.seller_id,
+                engine_destination_addr = request.fill.engine_destination_addr,
+            )
+
+            self.logger.debug(f"putting routed fill: {fill_obj} to {request.client_id}")
+            self.engine.fill_queues[request.client_id].put(fill_obj)
+            self.logger.debug(f"[PUT] size of {request.client_id} queue: {len(self.engine.fill_queues[request.client_id].queue)}")
+            self.logger.debug(f"[PUT] state of {request.client_id} queue: {self.engine.fill_queues[request.client_id].queue}")
+
+
 
             return pb2.PutFillResponse(
                 status = "ACCEPTED"
@@ -211,7 +243,7 @@ async def serve_ME(engine: MatchEngine, address: str) -> aio.Server:
 
         # Start the server
         await server.start()
-        engine.logger.info(f"ME Server started on {address}")
+        service.logger.info(f"ME Server started on {address}")
         # NOTE: waiting for termination moved to the exchange driver so we can have multiple servers on the same process
         # await server.wait_for_termination()
         return server

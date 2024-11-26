@@ -52,7 +52,7 @@ class Fill:
     timestamp: datetime
     buyer_id: str
     seller_id: str
-    engine_id: str
+    engine_destination_addr: str
 
     def pretty_print(self) -> str:
         if self.side == Side.SELL:

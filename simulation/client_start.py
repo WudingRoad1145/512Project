@@ -16,8 +16,8 @@ from client.client import Client
 
 async def main():
     symbol_list = ["AAPL"]
-    DELAY_FACTOR = .4
-    SIM_DURATION = 2 # in seconds
+    DELAY_FACTOR = 1
+    SIM_DURATION = 10 # in seconds
     EXCHANGE_ADDR = "127.0.0.1:50050"
     client_names = [
         "Adam",
@@ -38,7 +38,9 @@ async def main():
             authentication_key="password",
             symbols=symbol_list,
             delay_factor=DELAY_FACTOR,
-            exchange_addr=EXCHANGE_ADDR
+            exchange_addr=EXCHANGE_ADDR,
+            me_addr="127.0.0.1:50051",
+            direct_connect=True
         ))
 
     for client in clients:

@@ -3,6 +3,7 @@ import time
 from typing import Dict, List, Set
 import grpc
 import grpc.aio
+import pytz
 import datetime
 import uuid
 
@@ -198,20 +199,43 @@ class OrderBookSynchronizer:
         # Update global best prices
         await self.update_global_best_prices(symbol, best_bid, best_ask)
 
-    async def route_fill(self, fill, me_addr): 
+    async def route_fill(self, fill, client_id, me_addr): 
         stub = self.peer_stubs[me_addr]
-        fill_response = await stub.PutFill(fill)
-        self.logger.debug(f"route fill {fill.engine_origin_addr} -> {me_addr} return status {fill_response.status}")
+
+        self.logger.debug(f"route_fill fill: {fill}")
+        eastern = pytz.timezone('US/Eastern')
+
+        fill_dict = {
+            'fill_id' : str(fill.fill_id),
+            'order_id' : str(fill.order_id),
+            'symbol' : str(fill.symbol),
+            'side' : str(fill.side),
+            'price' : float(fill.price),
+            'quantity' : int(fill.quantity),
+            'remaining_quantity' : int(fill.remaining_quantity),
+            'timestamp' : (int(fill.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
+            'buyer_id' : str(fill.buyer_id),
+            'seller_id' : str(fill.seller_id),
+            'engine_destination_addr' : str(fill.engine_destination_addr),
+        }
+        fill_response = await stub.PutFill(pb2.PutFillRequest(
+            client_id=str(client_id),
+            fill=fill_dict,
+        ))
+        self.logger.debug(f"route fill {self.engine_addr} -> {me_addr} return status {fill_response.status}")
+
 
     async def route_order(self, order, me_addr):
         stub = self.peer_stubs[me_addr]
         order_response = await stub.SubmitOrder(order)
         self.logger.debug(f"route order {order.engine_origin_addr} -> {me_addr} return status {order_response.status}")
 
+
     def lookup_bbo_engine(self, symbol, side):
         """ Returns the address of the engine with the best bid/ask for a symbol"""
 
-        return self.engine_addr
+        # return self.engine_addr
+        return "127.0.0.1:50052"
 
 
 

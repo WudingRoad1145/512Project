@@ -94,7 +94,7 @@ class OrderBook:
                             timestamp=datetime.now(),
                             buyer_id=incoming_order.client_id,
                             seller_id=resting_order.client_id,
-                            engine_id=incoming_order.engine_id,
+                            engine_destination_addr=incoming_order.engine_origin_addr,
                         ),
                     )
                 )
@@ -113,7 +113,7 @@ class OrderBook:
                             timestamp=datetime.now(),
                             buyer_id=incoming_order.client_id,
                             seller_id=resting_order.client_id,
-                            engine_id=incoming_order.engine_id,
+                            engine_destination_addr=incoming_order.engine_origin_addr,
                         ),
                     )
                 )
@@ -151,7 +151,7 @@ class OrderBook:
                             timestamp=datetime.now(),
                             buyer_id=resting_order.client_id,
                             seller_id=incoming_order.client_id,
-                            engine_id=incoming_order.engine_id,
+                            engine_destination_addr=incoming_order.engine_origin_addr,
                         ),
                     )
                 )
@@ -170,7 +170,7 @@ class OrderBook:
                             timestamp=datetime.now(),
                             buyer_id=resting_order.client_id,
                             seller_id=incoming_order.client_id,
-                            engine_id=incoming_order.engine_id,
+                            engine_destination_addr=incoming_order.engine_origin_addr,
                         ),
                     )
                 )

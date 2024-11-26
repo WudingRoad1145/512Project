@@ -38,17 +38,17 @@ class SubmitOrderResponse(_message.Message):
     def __init__(self, order_id: _Optional[str] = ..., status: _Optional[str] = ..., error_message: _Optional[str] = ...) -> None: ...
 
 class FillRequest(_message.Message):
-    __slots__ = ("client_id", "engine_id", "timeout")
+    __slots__ = ("client_id", "engine_destination_addr", "timeout")
     CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
-    ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_DESTINATION_ADDR_FIELD_NUMBER: _ClassVar[int]
     TIMEOUT_FIELD_NUMBER: _ClassVar[int]
     client_id: str
-    engine_id: str
+    engine_destination_addr: str
     timeout: int
-    def __init__(self, client_id: _Optional[str] = ..., engine_id: _Optional[str] = ..., timeout: _Optional[int] = ...) -> None: ...
+    def __init__(self, client_id: _Optional[str] = ..., engine_destination_addr: _Optional[str] = ..., timeout: _Optional[int] = ...) -> None: ...
 
 class Fill(_message.Message):
-    __slots__ = ("fill_id", "order_id", "symbol", "side", "price", "quantity", "remaining_quantity", "timestamp", "buyer_id", "seller_id", "engine_id")
+    __slots__ = ("fill_id", "order_id", "symbol", "side", "price", "quantity", "remaining_quantity", "timestamp", "buyer_id", "seller_id", "engine_destination_addr")
     FILL_ID_FIELD_NUMBER: _ClassVar[int]
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     SYMBOL_FIELD_NUMBER: _ClassVar[int]
@@ -59,7 +59,7 @@ class Fill(_message.Message):
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     BUYER_ID_FIELD_NUMBER: _ClassVar[int]
     SELLER_ID_FIELD_NUMBER: _ClassVar[int]
-    ENGINE_ID_FIELD_NUMBER: _ClassVar[int]
+    ENGINE_DESTINATION_ADDR_FIELD_NUMBER: _ClassVar[int]
     fill_id: str
     order_id: str
     symbol: str
@@ -70,8 +70,8 @@ class Fill(_message.Message):
     timestamp: int
     buyer_id: str
     seller_id: str
-    engine_id: str
-    def __init__(self, fill_id: _Optional[str] = ..., order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[int] = ..., remaining_quantity: _Optional[int] = ..., timestamp: _Optional[int] = ..., buyer_id: _Optional[str] = ..., seller_id: _Optional[str] = ..., engine_id: _Optional[str] = ...) -> None: ...
+    engine_destination_addr: str
+    def __init__(self, fill_id: _Optional[str] = ..., order_id: _Optional[str] = ..., symbol: _Optional[str] = ..., side: _Optional[str] = ..., price: _Optional[float] = ..., quantity: _Optional[int] = ..., remaining_quantity: _Optional[int] = ..., timestamp: _Optional[int] = ..., buyer_id: _Optional[str] = ..., seller_id: _Optional[str] = ..., engine_destination_addr: _Optional[str] = ...) -> None: ...
 
 class PutFillRequest(_message.Message):
     __slots__ = ("client_id", "fill")
