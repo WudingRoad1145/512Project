@@ -26,9 +26,15 @@ async def main():
         "Diana",
         "Eric",
         "Fred",
-#        "Geoffrey",
-#        "Harry",
-#        "Ian",
+        "Geoffrey",
+        "Harry",
+        "Ian",
+        "Jill",
+        "Kelly",
+        "Larry",
+        "Mike",
+        "Natalie",
+        "Oscar"
     ]
     clients = []
 

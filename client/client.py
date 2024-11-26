@@ -169,8 +169,6 @@ class Client:
             if self.order_running:
                 await self.submit_order(order)
 
-            if random.random() < 0.60:
-                await self.cancel_all_orders()
 
 
     async def stop(self):
@@ -182,7 +180,7 @@ class Client:
         self.running = False
 
 
-        # TODO: cancel all orders
+        self.cancel_all_orders
 
     def update_positions(self, fill: Fill):
         if fill.symbol not in self.positions.keys():
@@ -271,7 +269,7 @@ class Client:
         ))
 
         if response.status == "SUCCESSFUL":
-            self.logger.info(f"cancel was successful")
+            self.logger.info(f"cancel was successful for quantity {response.quantity_cancelled}")
         else:
             self.logger.warning(f"cancel failed")
 

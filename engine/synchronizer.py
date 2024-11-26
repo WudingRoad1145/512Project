@@ -24,7 +24,7 @@ from common.orderbook import OrderBook
 from client.custom_formatter import LogFactory
 
 class OrderBookSynchronizer:
-    def __init__(self, engine_id: str, engine_addr: str, peer_addresses: List[str]):
+    def __init__(self, engine_id: str, engine_addr: str, peer_addresses: List[str] = []):
         self.engine_id = engine_id
         self.engine_addr = engine_addr
         self.peer_addresses = peer_addresses
@@ -66,6 +66,7 @@ class OrderBookSynchronizer:
             try:
                 channel = grpc.aio.insecure_channel(address)
                 self.peer_stubs[address] = pb2_grpc.MatchingServiceStub(channel)
+                self.logger.info(f"connected to ME at address: {address}")
             except Exception as e:
                 self.logger.error(f"Failed to connect to peer at {address}: {e}")
 

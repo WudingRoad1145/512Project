@@ -11,7 +11,7 @@ from client.custom_formatter import LogFactory
 from common.order import Order
 
 class CancelFairy:
-    def __init__(self, engine_id, engine_addr, peer_addresses):
+    def __init__(self, engine_id, engine_addr, peer_addresses=[]):
         self.engine_id = engine_id
         self.engine_addr = engine_addr
         self.peer_addresses = peer_addresses
@@ -68,7 +68,7 @@ class CancelFairy:
                     return_val = True if response.status == "SUCCESSFUL" else False
                     if return_val:
                         self.logger.info(f"Remotely handled cancel was successful")
-                    return return_val
+                    return return_val, response.quantity_cancelled
                 else:
 
                     self.logger.info(f"Cancel being handled on local engine")
@@ -80,13 +80,13 @@ class CancelFairy:
                     except Exception as e:
                         self.logger.warning(f"cancel had status {cancel_result} on orderbook but was not found in the active_orders table\nclient may have attempted to cancel a fully filled order. \n Error message {e}")
 
-                    if cancel_result:
+                    if cancel_result[0]:
                         self.logger.info(f"Locally handled cancel was successful")
                     return cancel_result
 
             else:
                 self.logger.warning(f"cancel for {order_msg} did not have an id in active orders")
-                return False
+                return False, 0
 
     async def update_active_orders_after_fills(self, fills: List[tuple[str, Fill]]):
         self.logger.info(f"updating active orders with {len(fills)} fills")

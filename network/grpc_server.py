@@ -37,17 +37,6 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 order_id=request.order_id, status="ERROR", error_message=str(e)
             )
 
-    async def CancelOrder(self, request, context):
-        try:
-            result = self.engine.cancel_order(request.order_id)
-            return pb2.CancelOrderResponse(
-                order_id=request.order_id, status="SUCCESS" if result else "NOT_FOUND"
-            )
-        except Exception as e:
-            return pb2.CancelOrderResponse(
-                order_id=request.order_id, status="ERROR", error_message=str(e)
-            )
-
     async def SyncOrderBook(self, request, context):
         """
         Synchronize order book by providing the current state of the symbol's bids and asks.
@@ -200,16 +189,18 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
 
     async def CancelOrder(self, request, context):
         self.logger.debug(f"received cancel order request: {request}")
-        is_cancelled = await self.engine.cancel_fairy.cancel(request.order_record, self.engine.orderbooks)
+        is_cancelled, cancelled_amt = await self.engine.cancel_fairy.cancel(request.order_record, self.engine.orderbooks)
         if (is_cancelled):
             return pb2.CancelOrderResponse(
                 order_id=request.order_id,
                 status="SUCCESSFUL",
+                quantity_cancelled=cancelled_amt
             )
         else:
             return pb2.CancelOrderResponse(
                 order_id=request.order_id,
                 status="FAILED",
+                quantity_cancelled=0
             )
 
     

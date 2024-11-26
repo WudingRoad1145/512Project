@@ -13,7 +13,7 @@ from network.grpc_server import MatchingServicer, serve_ME, serve_exchange
 from client.custom_formatter import LogFactory
 
 async def main():
-    NUM_ENGINES = 2
+    NUM_ENGINES = 5
     PASSWORD = "password"
     # IP_ADDR = "10.194.137.206"
     IP_ADDR = "127.0.0.1"
@@ -43,25 +43,14 @@ async def main():
 
     # Create engines and corresponding synchronizers 
     for i in range(NUM_ENGINES):
-        peer_addresses = [
-            f"{IP_ADDR}:{base_port + j}"
-            for j in range(NUM_ENGINES)
-            if j != i
-        ]
         synchronizer = OrderBookSynchronizer(
             engine_id=f"engine_{i}", 
             engine_addr=f"{IP_ADDR}:{base_port + i}", 
-            peer_addresses=peer_addresses
         )
         cancel_fairy = CancelFairy(
             engine_id=f"engine_{i}", 
             engine_addr=f"{IP_ADDR}:{base_port + i}", 
-            peer_addresses=peer_addresses
         )
-        peers = await synchronizer._connect_to_peers()
-        print(f"synchronizer {i} peers: {peer_addresses}")
-        print(f"synchronizer {i} peer channels: {peers}")
-        await cancel_fairy.connect_to_peers()
 
         engine = MatchEngine(
             engine_id=f"engine_{i}", 
@@ -72,7 +61,6 @@ async def main():
         )
         engines.append(engine)
 
-        # TODO: Start synchronizers here if necessary 
 
         # Start gRPC server
         try:
@@ -85,6 +73,12 @@ async def main():
         except Exception as e:
             logger.error(f"Failed to start server {i}: {e}")
             raise
+
+    for engine in engines:
+        # discover peers and connect synchronizers and cancel fairies
+        await engine.discover_peers(exchange_address)
+        print(f"synchronizer {engine.engine_id} peers: {engine.synchronizer.peer_addresses}")
+        print(f"cancel fairy {engine.engine_id} peers: {engine.cancel_fairy.peer_addresses}")
 
     # server cleanup
     for i, server in enumerate(servers):

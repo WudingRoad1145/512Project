@@ -31,21 +31,23 @@ class OrderBook:
             if order_msg.side == "BUY":
                 for cancellable_order in self.bids[order_msg.price]:
                     if cancellable_order.order_id == order_msg.order_id:
+                        remaining_quantity = cancellable_order.remaining_quantity
                         self.bids[order_msg.price].remove(cancellable_order)
                         logger.info(f"Successfully cancelled order!")
-                        return True
+                        return True, remaining_quantity
             if order_msg.side == "SELL":
                 for cancellable_order in self.asks[order_msg.price]:
                     if cancellable_order.order_id == order_msg.order_id:
+                        remaining_quantity = cancellable_order.remaining_quantity
                         self.asks[order_msg.price].remove(cancellable_order)
                         logger.info(f"Successfully cancelled order!")
-                        return True
+                        return True, remaining_quantity
 
             logger.warning(f"cancel failed: not in orderbook")
-            return False
+            return False, 0
         else:
             logger.warning("cancel failed: not in active_orders")
-            return False
+            return False, 0
 
     def add_order(self, order: Order, active_orders):
         """Add order to book and return list of fills"""

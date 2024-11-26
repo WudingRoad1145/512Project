@@ -44,6 +44,7 @@ class MatchEngine:
         self.fill_routing_table = {}
 
         self.symbol_bbo_lookup = {}
+        self.peer_addresses = []
 
 
     async def start_synchronizer(self):
@@ -162,6 +163,29 @@ class MatchEngine:
                 self.connected_to_exchange = False
         except Exception as e:
             self.logger.error(f"exchange registration error: {e}")
+
+    async def discover_peers(self, exchange_addr):
+        try:
+            self.exchange_channel = grpc.aio.insecure_channel(exchange_addr)
+            self.stub = pb2_grpc.MatchingServiceStub(self.exchange_channel)
+            response = await self.stub.DiscoverME(pb2.DiscoverMERequest(
+                engine_id=self.engine_id,
+                engine_addr=self.address,
+                engine_credentials=self.exchange_credentials
+            ))
+
+            if response.status == "SUCCESSFUL":
+                self.logger.info(f"ME {self.engine_id} discovered {len(response.engine_addresses)} peers (including itself): {response.engine_addresses}")
+                self.peer_addresses = [addr for addr in response.engine_addresses if addr != self.address]
+
+                self.synchronizer.peer_addresses = self.peer_addresses
+                self.cancel_fairy.peer_addresses = self.peer_addresses
+                await self.synchronizer._connect_to_peers()
+                await self.cancel_fairy.connect_to_peers()
+            else:
+                self.logger.error(f"unsuccessful discovery with exchange")
+        except Exception as e:
+            self.logger.error(f"peer discovery error: {e}")
 
 
 

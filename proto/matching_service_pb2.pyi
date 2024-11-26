@@ -98,14 +98,14 @@ class CancelOrderRequest(_message.Message):
     def __init__(self, order_id: _Optional[str] = ..., client_id: _Optional[str] = ..., order_record: _Optional[_Union[OrderRequest, _Mapping]] = ...) -> None: ...
 
 class CancelOrderResponse(_message.Message):
-    __slots__ = ("order_id", "status", "error_message")
+    __slots__ = ("order_id", "status", "quantity_cancelled")
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
-    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    QUANTITY_CANCELLED_FIELD_NUMBER: _ClassVar[int]
     order_id: str
     status: str
-    error_message: str
-    def __init__(self, order_id: _Optional[str] = ..., status: _Optional[str] = ..., error_message: _Optional[str] = ...) -> None: ...
+    quantity_cancelled: int
+    def __init__(self, order_id: _Optional[str] = ..., status: _Optional[str] = ..., quantity_cancelled: _Optional[int] = ...) -> None: ...
 
 class PriceLevel(_message.Message):
     __slots__ = ("price", "quantity", "order_count")

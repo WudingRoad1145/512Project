@@ -94,6 +94,7 @@ message CancelOrderRequest {
 message CancelOrderResponse {
     string order_id = 1;
     string status = 2;
+    int64 quantity_cancelled = 3;
 }
 
 // Price level in order book
