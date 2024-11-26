@@ -44,7 +44,7 @@ A distributed matching engine implementation using gRPC for communication betwee
 1. Create and activate a virtual environment (recommended):
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 ```
 
 2. Install dependencies:
@@ -57,15 +57,6 @@ pip install -r requirements.txt
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/matching_service.proto
 ```
 
-### Requirements
-
-Create a `requirements.txt` file with the following dependencies:
-```
-grpcio>=1.68.0
-grpcio-tools>=1.68.0
-protobuf>=5.28.1
-pytz
-```
 
 ## Architecture
 
@@ -102,18 +93,12 @@ The system needs to be run in two separate terminal windows/processes:
 
 ### Terminal 1 - Start Exchange and Matching Engines:
 ```bash
-# Activate virtual environment if using one
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Start the exchange and matching engines
 python simulation/exchange_start.py
 ```
 
 ### Terminal 2 - Start Clients:
 ```bash
-# Activate virtual environment if using one
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Start the clients
 python simulation/client_start.py
 ```
