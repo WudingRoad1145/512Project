@@ -89,11 +89,11 @@ message PutFillResponse {
 message CancelOrderRequest {
     string order_id = 1;
     string client_id = 2;
+    OrderRequest order_record = 3;
 }
 message CancelOrderResponse {
     string order_id = 1;
     string status = 2;
-    string error_message = 3;
 }
 
 // Price level in order book
@@ -152,7 +152,6 @@ message ClientRegistrationRequest {
     int64 client_x = 3;
     int64 client_y = 4;
 }
-
 message ClientRegistrationResponse {
     string status = 1;
     string match_engine_address = 2;
@@ -168,13 +167,11 @@ message RegisterMERequest {
 message RegisterMEResponse {
     string status = 1;
 }
-
 message DiscoverMERequest {
     string engine_id = 1;
     string engine_addr = 2;
     string engine_credentials = 3;
 }
-
 message DiscoverMEResponse {
     string status = 1;
     repeated string engine_addresses = 2;

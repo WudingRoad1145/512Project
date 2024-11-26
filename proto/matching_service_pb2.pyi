@@ -88,12 +88,14 @@ class PutFillResponse(_message.Message):
     def __init__(self, status: _Optional[str] = ...) -> None: ...
 
 class CancelOrderRequest(_message.Message):
-    __slots__ = ("order_id", "client_id")
+    __slots__ = ("order_id", "client_id", "order_record")
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    ORDER_RECORD_FIELD_NUMBER: _ClassVar[int]
     order_id: str
     client_id: str
-    def __init__(self, order_id: _Optional[str] = ..., client_id: _Optional[str] = ...) -> None: ...
+    order_record: OrderRequest
+    def __init__(self, order_id: _Optional[str] = ..., client_id: _Optional[str] = ..., order_record: _Optional[_Union[OrderRequest, _Mapping]] = ...) -> None: ...
 
 class CancelOrderResponse(_message.Message):
     __slots__ = ("order_id", "status", "error_message")

@@ -13,7 +13,7 @@ from network.grpc_server import MatchingServicer, serve_ME, serve_exchange
 from client.custom_formatter import LogFactory
 
 async def main():
-    NUM_ENGINES = 2
+    NUM_ENGINES = 1
     PASSWORD = "password"
     # IP_ADDR = "10.194.137.206"
     IP_ADDR = "127.0.0.1"
@@ -59,6 +59,7 @@ async def main():
             peer_addresses=peer_addresses
         )
         peers = await synchronizer._connect_to_peers()
+        await cancel_fairy.connect_to_peers()
         print(f"synchronizer {i} peers: {peer_addresses}")
         print(f"synchronizer {i} peer channels: {peers}")
 

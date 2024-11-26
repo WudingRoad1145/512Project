@@ -21,8 +21,8 @@ async def main():
     EXCHANGE_ADDR = "127.0.0.1:50050"
     client_names = [
         "Adam",
-        "Betsy",
-        "Charlie",
+#        "Betsy",
+#        "Charlie",
 #        "Diana",
 #        "Eric",
 #        "Fred",

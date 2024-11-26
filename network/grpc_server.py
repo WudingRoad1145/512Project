@@ -198,6 +198,20 @@ class MatchingServicer(pb2_grpc.MatchingServiceServicer):
                 match_engine_address=""
             )
 
+    async def CancelOrder(self, request, context):
+        self.logger.debug(f"received cancel order request: {request}")
+        is_cancelled = await self.engine.cancel_fairy.cancel(request.order_record, self.engine.orderbooks)
+        if (is_cancelled):
+            return pb2.CancelOrderResponse(
+                order_id=request.order_id,
+                status="SUCCESSFUL",
+            )
+        else:
+            return pb2.CancelOrderResponse(
+                order_id=request.order_id,
+                status="FAILED",
+            )
+
     
 
 class ExchangeServicer(pb2_grpc.MatchingServiceServicer):

@@ -51,6 +51,7 @@ class Client:
         self.me_addr = me_addr
         self.connected_to_me = False
         self.direct_connect = direct_connect
+        self.active_orders = []
 
         self.running = False
         self.order_running = False
@@ -65,10 +66,10 @@ class Client:
 
     async def submit_order(self, order: Order):
         if not self.connected_to_me:
-            self.logger.error("No matching engine recorded")
+            self.logger.error("No matching engine recorded, order rejected")
         else:
+            self.active_orders.append(order)
             send_time = time.time()
-            order = self._generate_random_order()
             # self.logger.info(f"{self.name} submitted order with ID: {order.order_id} at time {send_time}")
             self.logger.info(f"{self.name}: {order.pretty_print()}")
 
@@ -162,21 +163,21 @@ class Client:
         registration_response = await self.register()
         if (registration_response):
             if ("SUCCESSFUL" in registration_response.status):
-                # TODO: Modify self.me_addr to have the address given in the response
                 asyncio.create_task(self.run_loop())
             else:
                 self.logger.error(f"Registration failed for client {self.name} with response status {registration_response.status}")
 
     async def run_loop(self):
-        with grpc.insecure_channel(self.me_addr) as channel:
-            stub = pb2_grpc.MatchingServiceStub(channel)
-            while self.running:
-                await asyncio.sleep(random.random() * self.delay_factor)
-                order = self._generate_random_order()
-                if self.fill_running:
-                    await self.get_fills_and_update()
-                if self.order_running:
-                    await self.submit_order(order)
+        while self.running:
+            await asyncio.sleep(random.random() * self.delay_factor)
+            order = self._generate_random_order()
+            if self.fill_running:
+                await self.get_fills_and_update()
+            if self.order_running:
+                await self.submit_order(order)
+
+            if (random.random() < .3):
+                await self.cancel_all_orders()
 
     async def stop(self):
         self.logger.info("Stopping run")
@@ -237,3 +238,51 @@ class Client:
             client_id=self.name,
             engine_origin_addr=self.me_addr
         )
+
+    async def cancel_order(self, order: Order):
+        self.logger.info(f"cancelling order {pretty_print_OrderRequest(order)}")
+        self.logger.debug(f"cancelling full order {order}")
+
+        eastern = pytz.timezone('US/Eastern')
+#        order_obj = {
+#            "order_id" : order.order_id,
+#            "symbol" : order.symbol,
+#            "side" : order.side.name,
+#            "price" : order.price,
+#            "quantity" : order.quantity,
+#            "remaining_quantity" : order.remaining_quantity,
+#            "client_id" : order.client_id,
+#            "engine_origin_addr" : order.engine_origin_addr,
+#            'timestamp' : (int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
+#        }
+
+        order_obj = pb2.OrderRequest(
+            order_id=order.order_id,
+            symbol=order.symbol,
+            side=order.side.name,
+            price=order.price,
+            quantity=int(order.quantity),
+            remaining_quantity=int(order.remaining_quantity),
+            client_id=order.client_id,
+            engine_origin_addr=order.engine_origin_addr,
+            timestamp=(int(order.timestamp.astimezone(eastern).timestamp() * 10 ** 9)),
+
+        )
+
+
+        response = await self.stub.CancelOrder(pb2.CancelOrderRequest(
+            order_id = order.order_id,
+            client_id = order.client_id,
+            order_record = order_obj
+        ))
+
+        if response.status == "SUCCESSFUL":
+            self.logger.info(f"cancel was successful")
+        else:
+            self.logger.warning(f"cancel failed")
+
+    async def cancel_all_orders(self):
+        self.logger.info(f"cancelling all orders ({len(self.active_orders)} orders)")
+        for order in self.active_orders:
+            await self.cancel_order(order)
+            self.active_orders.remove(order)

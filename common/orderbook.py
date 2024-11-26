@@ -26,6 +26,27 @@ class OrderBook:
 
         return rep
 
+    async def cancel_order(self, order_msg, active_orders, logger):
+        if order_msg.order_id in active_orders.keys():
+            if order_msg.side == "BUY":
+                for cancellable_order in self.bids[order_msg.price]:
+                    if cancellable_order.order_id == order_msg.order_id:
+                        self.bids[order_msg.price].remove(cancellable_order)
+                        logger.info(f"Successfully cancelled order!")
+                        return True
+            if order_msg.side == "SELL":
+                for cancellable_order in self.asks[order_msg.price]:
+                    if cancellable_order.order_id == order_msg.order_id:
+                        self.asks[order_msg.price].remove(cancellable_order)
+                        logger.info(f"Successfully cancelled order!")
+                        return True
+
+            logger.warning(f"cancel failed: not in orderbook")
+            return False
+        else:
+            logger.warning("cancel failed: not in active_orders")
+            return False
+
     def add_order(self, order: Order, active_orders):
         """Add order to book and return list of fills"""
         fills = {
@@ -122,6 +143,9 @@ class OrderBook:
                     # Remove filled orders
                     if resting_order.remaining_quantity <= 0:
                         orders.remove(resting_order)
+                        del active_orders[resting_order.order_id]
+                    if incoming_order.remaining_quantity <= 0:
+                        del active_orders[incoming_order.order_id]
                 else:
                     # cancel logic
                     orders.remove(resting_order)
@@ -183,6 +207,10 @@ class OrderBook:
                     # Remove filled orders
                     if resting_order.remaining_quantity <= 0:
                         orders.remove(resting_order)
+                        del active_orders[resting_order.order_id]
+                    if incoming_order.remaining_quantity <= 0:
+                        #orders.remove(incoming_order)
+                        del active_orders[incoming_order.order_id]
                 else:
                     orders.remove(resting_order)
 

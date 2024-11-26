@@ -57,6 +57,8 @@ class MatchEngine:
         """Submit new order to matching engine"""
 
         self.logger.debug(f"received order: {order}")
+        self.logger.debug(f"number of active orders: {len(list(self.cancel_fairy.active_orders.keys()))}")
+        self.logger.debug(f"active order state: {self.cancel_fairy.active_orders}")
 
         # First check if the best price for this symbol is on another engine
         best_me_addr = self.synchronizer.lookup_bbo_engine(order.symbol, order.side)
@@ -64,12 +66,19 @@ class MatchEngine:
             # route the order at most once
             self.logger.info(f"routing order from {self.address} -> {best_me_addr}")
             await self.synchronizer.route_order(order, best_me_addr)
+            # add this order to the record of active orders
+            self.cancel_fairy.active_orders.update({order.order_id : {
+                "remaining_quantity" : order.remaining_quantity,
+                "address" : best_me_addr,
+                "order_record" : order
+            }})
             return {'incoming_fills' : [], 'resting_fills' : []}
 
         # add this order to the record of active orders
         self.cancel_fairy.active_orders.update({order.order_id : {
             "remaining_quantity" : order.remaining_quantity,
-            "address" : self.address
+            "address" : self.address,
+                "order_record" : order
         }})
 
         self.orders[order.order_id] = order
@@ -96,6 +105,7 @@ class MatchEngine:
 
         # Add fills to queues
         if fills:
+            await self.cancel_fairy.update_active_orders_after_fills(fills['incoming_fills'] + fills['resting_fills'])
             self.logger.debug(f"clients registered with ME {self.address}: {self.clients}")
             for client_id, fill in fills['incoming_fills'] + fills['resting_fills']:
                 if client_id in self.clients:
