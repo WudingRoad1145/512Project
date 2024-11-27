@@ -1,37 +1,59 @@
 # Distributed Order Matching Engine
+
 A simple distributed order matching system that demonstrates how multiple matching engines can synchronize order books across different nodes. 
 
 Final Project for CS512 Distsys 2024 Fall
 
 ## Project Structure
 ```
-512Project/
-├── proto/
-│   └── matching_service.proto
-├── common/
-│   ├── __init__.py
-│   ├── order.py
-│   └── orderbook.py
-├── engine/
-│   ├── __init__.py
-│   ├── match_engine.py
-│   └── synchronizer.py
-├── network/
-│   ├── __init__.py
-│   └── grpc_server.py
-└── main.py
+├── client
+│   ├── client.py
+│   ├── custom_formatter.py
+├── common
+│   ├── orderbook.py
+│   ├── order.py
+├── engine
+│   ├── cancel_fairy.py
+│   ├── exchange.py
+│   ├── match_engine.py
+│   └── synchronizer.py
+├── logs
+│   ├── cancelfairy_logs
+│   ├── client_logs
+│   ├── engine_logs
+│   ├── exchange_logs
+│   ├── serve_logs
+│   └── synchronizer_logs
+├── network
+│   ├── grpc_server.py
+├── proto
+│   ├── __init__.py
+│   ├── matching_service_pb2_grpc.py
+│   ├── matching_service_pb2.py
+│   ├── matching_service_pb2.pyi
+│   ├── matching_service.proto
+├── README.md
+├── requirements.txt
+└── simulation
+    ├── client_start.py
+    ├── exchange_start.py
+    ├── processes
+    │   ├── start_exchange.py
+    │   └── start_me.py
+    ├── simulation.py
 ```
 
 ## Features
-- Multiple matching engines running on different ports to simulate a distributed exchange system
-- Real-time order book synchronization(most basic logic now)
-- Simple price-time priority matching
+- Multiple matching engines forming a distributed exchange system
+- Client API to allow custom trading logic
+- Real-time order book synchronization
+- Price-time priority matching
 - Support for multiple trading pairs
-- Random order simulation for testing
+- Support for limit orders and cancellations
 
 ## Assumptions
 - Each matching machine has an orderbook and its own synchronizer to communicate with other engines
-- Price is handled with a naive event-driven sync (on fills)
+- Exchange service for matching engine discovery will be highly available
 
 
 ## Implementation Details
@@ -40,21 +62,11 @@ Final Project for CS512 Distsys 2024 Fall
     python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/matching_service.proto
     ```
 - python gRPC package is outdated, make sure you install the latest version of **grpcio**, dependencies in `requirements.txt`
-- Run simulator from main.py
-  - adjust the number of engines, trading pairs, and other simulation parameters
 
-## TODOs
-- There seems to be some broadcasting issue after fills
-- More robust syncing methods
-  - Event-driven: immediate sync on fills or price changes or large orders
-  - Time-based: periodic full sync to ensure consistency across all machines
-  - Recovery-based: full sync when a peer reconnects or joins
-- Maybe we want to implement a "Exchange Computer System 100" in Figure 1 of the patern as the master file of all machines, traders, and trading data
-- Maybe we want to have a separate "shared memory" as designed in patent somewhere -> maybe a centralized cache?
-- Right now updates are sending over complete orderbook, perhaps we should send incrementally
-- No handling of network issue reconnect/ retry/ any recovery method
-- No handling of new machine joining the network
-- Latency Optimizations: 
-  - parallelizing gRPC calls when broadscasting updates to different peers
-  - batching multiple updates tgt instead of independently?
-- Something fun fun
+## Testing
+
+- From the top level directory, navigate to `simulation`. From here, you can edit the files `process/start_exchange.py` and `process/start_me.py` to modify the ip addresses at which the exchange and the matching engines will be located (by default these are on local host). Run the exchange script to create an exchange, and run the `start_me` script (multiple times if desired) to form an exchange with matching engines.
+
+- From the top level directory, run `simulation/client_start.py` to run several predefined clients at the matching engines. Make sure to edit this file to reflect any changes to the exchange ip address if you changed it earlier. 
+
+- If you want to implement your own bot, take a look at `client/automated_trader_template` and `simulation/client_examples/random_client.py`. All you need to implement is the logic for generating orders and the logic for handling fill information
